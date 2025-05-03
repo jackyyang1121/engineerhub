@@ -1,0 +1,4 @@
+npx @react-native-community/cli init frontend 
+cd frontend
+rm -rf .git
+cd ..

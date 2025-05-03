@@ -1,0 +1,9 @@
+#需要兩個終端機，都在frontend目錄的終端機執行
+1.
+npx react-native start --reset-cache
+2.
+npx react-native run-android --verbose
+
+
+#檢查
+npx @react-native-community/cli doctor
