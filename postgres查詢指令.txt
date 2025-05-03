@@ -1,0 +1,21 @@
+#連接到資料庫
+psql -U <username> -d <database_name> -h <host> -p <port>
+
+#列出所有資料庫：
+\l
+#切換到指定資料庫：
+\c <database_name>
+#查看目前所在資料庫：
+SELECT current_database();
+#列出所有資料表：
+\dt
+#查看特定表格的結構（欄位、資料型態等）：
+\d <table_name>
+#查詢表格所有資料：
+SELECT * FROM <table_name>;
+#查詢特定欄位：
+SELECT <column1>, <column2> FROM <table_name>;
+#退出 psql：
+\q
+#查看當前使用者：
+SELECT current_user;
