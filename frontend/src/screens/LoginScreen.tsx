@@ -10,7 +10,7 @@ const LoginScreen: React.FC = () => {
   const handleLogin = async () => {
     try {
       // 發送登入請求到後端
-      const response = await axios.post('http://localhost:8000/api/users/login/', {
+      const response = await axios.post('http://10.0.2.2:8000/api/users/login/', {
         username,
         password,
       });

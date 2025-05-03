@@ -13,7 +13,7 @@ const RegisterScreen: React.FC = () => {
   const handleRegister = async () => {
     try {
       // 發送註冊請求到後端，技能以逗號分隔轉為陣列
-      const response = await axios.post('http://localhost:8000/api/users/register/', {
+      const response = await axios.post('http://10.0.2.2:8000/api/users/register/', {
         username,
         email,
         phone_number: phoneNumber,

@@ -5,6 +5,6 @@ cd backend
 python manage.py startapp todo_app
 
 #Django 的 ORM（物件關係對映） 和 資料庫遷移（migrations） 系統相關*
-#需檢查setting.py裡INSTALLED_APPS 中有沒有加入'todo_app',
+#需檢查setting.py裡INSTALLED_APPS 中有沒有加入'apps.users',
 python manage.py makemigrations
 python manage.py migrate
