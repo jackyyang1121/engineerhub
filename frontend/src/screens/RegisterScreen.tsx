@@ -4,7 +4,9 @@ import React, { useState } from 'react';
 import { View, TextInput, Button, Text } from 'react-native';
 import axios from 'axios';  // 用於發送 HTTP 請求
 
+// RegisterScreen 組件，負責註冊頁面邏輯與畫面
 const RegisterScreen: React.FC = () => {
+  // 狀態：用戶名、電子信箱、手機號碼、密碼、技能、自介、錯誤訊息
   const [username, setUsername] = useState('');      // 儲存用戶名輸入
   const [email, setEmail] = useState('');            // 儲存電子信箱輸入
   const [phoneNumber, setPhoneNumber] = useState(''); // 儲存手機號碼輸入
@@ -13,8 +15,8 @@ const RegisterScreen: React.FC = () => {
   const [bio, setBio] = useState('');                // 儲存自介輸入
   const [error, setError] = useState('');            // 儲存錯誤訊息
 
+  // 處理註冊請求
   const handleRegister = async () => {
-    // 處理註冊邏輯
     try {
       const response = await axios.post('http://10.0.2.2:8000/api/users/register/', {
         username,          // 傳送用戶名
@@ -30,6 +32,7 @@ const RegisterScreen: React.FC = () => {
     }
   };
 
+  // 畫面渲染
   return (
     <View>
       <Text>用戶名</Text>
@@ -42,15 +45,15 @@ const RegisterScreen: React.FC = () => {
       <TextInput
         value={password}
         onChangeText={setPassword}
-        secureTextEntry  // 隱藏密碼輸入
+        secureTextEntry  
         placeholder="請輸入密碼"
       />
       <Text>技能標籤（以逗號分隔）</Text>
       <TextInput value={skills} onChangeText={setSkills} placeholder="如：Python, Java" />
       <Text>自介</Text>
       <TextInput value={bio} onChangeText={setBio} placeholder="請輸入自介" />
-      <Button title="註冊" onPress={handleRegister} />  // 註冊按鈕
-      {error && <Text>{error}</Text>}  // 顯示錯誤訊息
+      <Button title="註冊" onPress={handleRegister} /> 
+      {error && <Text>{error}</Text>} 
     </View>
   );
 };

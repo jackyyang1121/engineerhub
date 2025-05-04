@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button } from 'react-native';
 import axios from 'axios';  // 用於發送 HTTP 請求
 
+// ProfileScreen 組件，負責個人檔案頁面邏輯與畫面
 const ProfileScreen: React.FC = () => {
+  // 狀態：用戶名、電子信箱、手機號碼、技能、自介、錯誤訊息
   const [username, setUsername] = useState('');  // 儲存用戶名
   const [email, setEmail] = useState('');        // 儲存電子信箱
   const [phoneNumber, setPhoneNumber] = useState(''); // 儲存手機號碼
@@ -12,8 +14,8 @@ const ProfileScreen: React.FC = () => {
   const [bio, setBio] = useState('');            // 儲存自介
   const [error, setError] = useState('');        // 儲存錯誤訊息
 
+  // 頁面載入時獲取個人檔案資料
   useEffect(() => {
-    // 頁面載入時獲取個人檔案資料
     const fetchProfile = async () => {
       try {
         const response = await axios.get('http://10.0.2.2:8000/api/users/profile/', {
@@ -32,8 +34,8 @@ const ProfileScreen: React.FC = () => {
     fetchProfile();  // 執行獲取資料函數
   }, []);  // 空依賴陣列，僅在初次渲染時執行
 
+  // 處理個人檔案更新邏輯
   const handleUpdate = async () => {
-    // 處理個人檔案更新邏輯
     try {
       await axios.put('http://10.0.2.2:8000/api/users/profile/', {
         username,          // 傳送用戶名
@@ -50,6 +52,7 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
+  // 畫面渲染
   return (
     <View>
       <Text>用戶名</Text>
@@ -62,8 +65,8 @@ const ProfileScreen: React.FC = () => {
       <TextInput value={skills} onChangeText={setSkills} />
       <Text>自介</Text>
       <TextInput value={bio} onChangeText={setBio} />
-      <Button title="更新" onPress={handleUpdate} />
-      {error ? <Text>{error}</Text> : null}
+      <Button title="更新" onPress={handleUpdate} /> 
+      {error ? <Text>{error}</Text> : null} 
     </View>
   );
 };
