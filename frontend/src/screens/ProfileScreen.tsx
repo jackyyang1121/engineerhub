@@ -16,34 +16,36 @@ const ProfileScreen: React.FC = () => {
   const [skills, setSkills] = useState('');      // 儲存技能標籤
   const [bio, setBio] = useState('');            // 儲存自介
   const [error, setError] = useState('');        // 儲存錯誤訊息
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [posts, setPosts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);  // 控制載入中狀態
+  const [isUpdating, setIsUpdating] = useState(false);  // 控制更新中狀態
+  const [posts, setPosts] = useState<any[]>([]);  // 儲存用戶貼文列表
 
   // 頁面載入時獲取個人檔案資料
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setIsLoading(true);
+        if (!token) return;
         const response = await axios.get('http://10.0.2.2:8000/api/users/profile/', {
-          headers: { Authorization: `Token ${token}` },  // 使用 context 中的 token
+          headers: { Authorization: `Token ${token}` },
         });
-        const user = response.data;  // 獲取用戶資料
-        setUsername(user.username);  // 設定用戶名
-        setEmail(user.email);        // 設定電子信箱
-        setPhoneNumber(user.phone_number);  // 設定手機號碼
-        setSkills(user.skills.join(', '));  // 將技能陣列轉為字串
-        setBio(user.bio);            // 設定自介
-        setError('');  // 清空錯誤訊息
+        const user = response.data;
+        setUsername(user.username);
+        setEmail(user.email);
+        setPhoneNumber(user.phone_number);
+        setSkills(user.skills.join(', '));
+        setBio(user.bio);
+        setError('');
       } catch (err) {
-        setError('獲取個人檔案失敗');  // 設定錯誤訊息
+        setError('獲取個人檔案失敗');
       } finally {
         setIsLoading(false);
       }
     };
     const fetchUserPosts = async () => {
       try {
-        // 修正 API 路徑，假設後端支援 posts/?user=current
+        if (!token) return;
+        // 根據 apps/posts/posts/ 設定 API 路徑
         const response = await axios.get('http://10.0.2.2:8000/api/posts/posts/?user=current', {
           headers: { Authorization: `Token ${token}` },
         });
@@ -85,7 +87,7 @@ const ProfileScreen: React.FC = () => {
     }
   };
 
-  // Skeleton 元件
+  // Skeleton 元件，用於載入中狀態的佔位顯示
   const SkeletonCard = () => (
     <View style={[styles.card, { opacity: 0.5 }]}> 
       <View style={{ width: '100%', height: 18, backgroundColor: COLORS.border, marginBottom: 10, borderRadius: 6 }} />
@@ -93,6 +95,7 @@ const ProfileScreen: React.FC = () => {
     </View>
   );
 
+  // 載入中狀態顯示
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -180,6 +183,7 @@ const ProfileScreen: React.FC = () => {
   );
 };
 
+// 定義樣式
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -198,91 +202,88 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   headerSection: {
-    alignItems: 'center',
-    paddingTop: 32,
-    paddingBottom: 18,
     backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    marginBottom: 18,
+    borderRadius: RADIUS.md,
+    padding: 20,
+    marginBottom: 16,
+    ...SHADOW,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   avatarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    justifyContent: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
-    borderColor: COLORS.accent,
-    marginRight: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   editBtn: {
     backgroundColor: COLORS.accent,
     borderRadius: RADIUS.sm,
     paddingVertical: 8,
-    paddingHorizontal: 18,
-    alignSelf: 'center',
+    paddingHorizontal: 16,
     ...SHADOW,
   },
   editBtnText: {
     color: COLORS.primary,
     fontFamily: FONTS.medium,
-    fontSize: FONTS.size.md,
+    fontSize: FONTS.size.sm,
     letterSpacing: 1,
   },
   username: {
-    color: COLORS.text,
+    color: COLORS.accent,
     fontFamily: FONTS.bold,
-    fontSize: 22,
-    marginTop: 4,
-    marginBottom: 2,
-    letterSpacing: 1,
+    fontSize: FONTS.size.lg,
+    marginBottom: 8,
   },
   bio: {
-    color: COLORS.subText,
+    color: COLORS.text,
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
-    marginBottom: 10,
-    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 22,
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 8,
+    justifyContent: 'space-around',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
+    paddingTop: 16,
   },
   statBox: {
     alignItems: 'center',
-    marginHorizontal: 18,
   },
   statNum: {
     color: COLORS.accent,
     fontFamily: FONTS.bold,
-    fontSize: 18,
+    fontSize: FONTS.size.md,
+    marginBottom: 4,
   },
   statLabel: {
     color: COLORS.subText,
     fontFamily: FONTS.regular,
-    fontSize: FONTS.size.xs,
+    fontSize: FONTS.size.sm,
   },
   card: {
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.md,
-    padding: 22,
+    padding: 20,
+    marginBottom: 16,
     ...SHADOW,
     borderWidth: 1,
     borderColor: COLORS.border,
   },
   label: {
-    color: COLORS.accent,
+    color: COLORS.subText,
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.sm,
-    marginBottom: 4,
-    marginTop: 12,
+    marginBottom: 8,
     letterSpacing: 0.5,
   },
   input: {
@@ -295,19 +296,22 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    marginBottom: 6,
+    marginBottom: 16,
   },
   button: {
     backgroundColor: COLORS.accent,
     borderRadius: RADIUS.sm,
     paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 18,
+    marginBottom: 8,
     ...SHADOW,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: COLORS.primary,
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.bold,
     fontSize: FONTS.size.md,
     letterSpacing: 1,
   },
@@ -315,9 +319,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFE5E5',
     padding: 12,
     borderRadius: RADIUS.md,
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#FF3B30',
-    marginTop: 12,
   },
   errorText: {
     color: '#FF3B30',
@@ -325,19 +329,18 @@ const styles = StyleSheet.create({
     fontSize: FONTS.size.sm,
     textAlign: 'center',
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
   content: {
     color: COLORS.text,
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
+    lineHeight: 22,
   },
   emptyText: {
     color: COLORS.subText,
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
     textAlign: 'center',
+    marginTop: 24,
   },
 });
 

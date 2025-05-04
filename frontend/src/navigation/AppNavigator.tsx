@@ -1,4 +1,4 @@
-// 導航器檔案，整合所有頁面導航
+// 導航器檔案，整合所有頁面導航，負責全局 Stack 與 Tab 結構
 
 import React from 'react';  // 引入 React 核心功能，用於構建組件
 import { NavigationContainer } from '@react-navigation/native';
@@ -18,13 +18,16 @@ import NotificationsScreen from '../screens/NotificationsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
+// 建立 Stack 與 Tab 導航器，型別分別對應 RootStackParamList、TabParamList
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
+// TabNavigator 組件，定義底部分頁導航與圖示
 const TabNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        // 根據 route.name 設定底部圖示
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
           switch (route.name) {
@@ -64,6 +67,7 @@ const TabNavigator = () => {
         headerShown: false,
       })}
     >
+      {/* 定義底部分頁的每個頁面與對應組件 */}
       <Tab.Screen name="Home" component={HomeScreen} options={{ title: '首頁' }} />
       <Tab.Screen name="Search" component={SearchScreen} options={{ title: '搜尋' }} />
       <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: '通知' }} />
@@ -73,6 +77,7 @@ const TabNavigator = () => {
   );
 };
 
+// AppNavigator 組件，定義全局 Stack 導航結構
 const AppNavigator = () => {
   return (
       <Stack.Navigator
@@ -92,6 +97,7 @@ const AppNavigator = () => {
           fullScreenGestureEnabled: true,
         }}
       >
+        {/* 登入、註冊、主頁（底部分頁）、貼文詳情、個人檔案、作品集、已儲存、設定等頁面 */}
         <Stack.Screen 
           name="Login" 
           component={LoginScreen} 
@@ -151,4 +157,4 @@ const AppNavigator = () => {
   );
 };
 
-export default AppNavigator;  // 導出 AppNavigator 組件，供應用主檔案（如 App.tsx）使用
+export default AppNavigator;  // 導出全局導航器供 App 使用

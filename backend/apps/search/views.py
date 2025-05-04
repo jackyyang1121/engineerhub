@@ -10,7 +10,11 @@ from apps.users.serializers import UserSerializer  # 引入用戶序列化器，
 from apps.posts.serializers import PostSerializer  # 引入貼文序列化器，用於將貼文資料轉換為 JSON 格式
 
 class SearchView(APIView):
-    # 搜尋視圖類，負責處理用戶和貼文的搜尋請求
+    """
+    搜尋視圖類，負責處理用戶和貼文的搜尋請求
+    - GET: 根據查詢參數 'q' 搜尋用戶（用戶名/技能）與貼文（內容）
+    - 回傳格式：{"users": [...], "posts": [...]}
+    """
     def get(self, request):
         # 處理 GET 請求，執行搜尋邏輯
         query = request.query_params.get('q', '')  # 從請求中獲取查詢參數 'q'，若無則預設為空字串

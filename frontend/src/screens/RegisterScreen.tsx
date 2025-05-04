@@ -1,4 +1,4 @@
-// 註冊頁面檔案，處理用戶註冊功能
+// 註冊頁面檔案，處理用戶註冊、表單驗證、錯誤顯示與跳轉
 
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, ScrollView } from 'react-native';

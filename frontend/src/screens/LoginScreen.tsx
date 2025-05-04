@@ -1,4 +1,4 @@
-// 登入頁面檔案，處理用戶登入功能
+// 登入頁面檔案，處理用戶登入、表單驗證、錯誤顯示與跳轉
 
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';

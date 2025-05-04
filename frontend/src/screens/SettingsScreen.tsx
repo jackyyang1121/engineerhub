@@ -1,4 +1,4 @@
-// 設定頁面檔案，允許用戶更新個人設定
+// 設定頁面檔案，處理用戶個人設定、帳號管理、支援與登出等功能
 
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, SafeAreaView } from 'react-native';

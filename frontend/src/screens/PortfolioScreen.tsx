@@ -1,9 +1,11 @@
 // src/screens/PortfolioScreen.tsx
+// 作品集頁面檔案，處理用戶作品集的顯示、新增與管理
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, FlatList, Image, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 
+// 定義作品集型別
 interface Portfolio {
   id: number;
   title: string;
@@ -12,18 +14,26 @@ interface Portfolio {
   image?: string;
 }
 
+// 作品集頁面組件
 const PortfolioScreen: React.FC = () => {
+  // 作品集列表狀態，存放從 API 取得的資料
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  // 新增作品集表單欄位狀態
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [link, setLink] = useState('');
+  // 錯誤訊息狀態
   const [error, setError] = useState('');
+  // 載入中狀態
   const [isLoading, setIsLoading] = useState(true);
 
+  // 頁面載入時自動取得作品集
   useEffect(() => {
+    // 取得作品集的函數
     const fetchPortfolios = async () => {
       try {
         setIsLoading(true);
+        // 發送 GET 請求到後端 API，取得用戶作品集
         const response = await axios.get('http://10.0.2.2:8000/api/portfolios/portfolios/', {
           headers: { Authorization: `Token YOUR_TOKEN_HERE` },
         });
@@ -38,6 +48,7 @@ const PortfolioScreen: React.FC = () => {
     fetchPortfolios();
   }, []);
 
+  // 新增作品集的函數
   const handleAddPortfolio = async () => {
     if (!title.trim() || !description.trim() || !link.trim()) {
       setError('請填寫所有欄位');
@@ -46,6 +57,7 @@ const PortfolioScreen: React.FC = () => {
 
     try {
       setIsLoading(true);
+      // 發送 POST 請求到後端 API，新增作品集
       await axios.post('http://10.0.2.2:8000/api/portfolios/portfolios/', {
         title,
         description,
@@ -57,6 +69,7 @@ const PortfolioScreen: React.FC = () => {
       setDescription('');
       setLink('');
       setError('');
+      // 新增後重新取得作品集列表
       const response = await axios.get('http://10.0.2.2:8000/api/portfolios/portfolios/', {
         headers: { Authorization: `Token YOUR_TOKEN_HERE` },
       });
@@ -68,6 +81,7 @@ const PortfolioScreen: React.FC = () => {
     }
   };
 
+  // 載入中狀態顯示
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -78,6 +92,7 @@ const PortfolioScreen: React.FC = () => {
     );
   }
 
+  // 無作品集時顯示友善提示與新增按鈕
   if (!portfolios || portfolios.length === 0) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -92,6 +107,7 @@ const PortfolioScreen: React.FC = () => {
     );
   }
 
+  // 有作品集時顯示列表
   return (
     <SafeAreaView style={styles.safeArea}>
       {error ? (
@@ -105,12 +121,17 @@ const PortfolioScreen: React.FC = () => {
         numColumns={2}
         renderItem={({ item }) => (
           <View style={styles.card} accessibilityLabel="作品集卡片">
+            {/* 作品集圖片 */}
             <Image source={{ uri: item.image || 'https://placehold.co/120x120' }} style={styles.image} />
+            {/* 作品集標題 */}
             <Text style={styles.title}>{item.title}</Text>
+            {/* 作品集描述 */}
             <Text style={styles.desc}>{item.description}</Text>
+            {/* 查看連結按鈕 */}
             <TouchableOpacity style={styles.linkBtn} activeOpacity={0.8} onPress={() => {}} accessibilityLabel="查看連結按鈕">
               <Text style={styles.linkBtnText}>查看連結</Text>
             </TouchableOpacity>
+            {/* 編輯與刪除按鈕 */}
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.editBtn} activeOpacity={0.8} accessibilityLabel="編輯作品按鈕">
                 <Text style={styles.editBtnText}>編輯</Text>
@@ -134,6 +155,7 @@ const PortfolioScreen: React.FC = () => {
   );
 };
 
+// 樣式定義
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,

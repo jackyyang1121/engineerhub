@@ -1,4 +1,4 @@
-// 貼文詳情頁面檔案，顯示貼文詳情並允許互動
+// 貼文詳情頁面檔案，處理單一貼文的顯示、互動、留言等功能
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, TextInput, Image, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, StyleSheet, SafeAreaView } from 'react-native';

@@ -1,20 +1,26 @@
+// 導航型別定義檔案，定義應用程式所有頁面的導航參數型別
+
 import { NavigatorScreenParams } from '@react-navigation/native';
 
+// 定義根導航堆疊的參數型別
+// 包含所有主要頁面的導航參數
 export type RootStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  MainApp: NavigatorScreenParams<TabParamList>;
-  Profile: { userId?: number };
-  PostDetail: { postId: number };
-  Portfolio: undefined;
-  SavedPosts: undefined;
-  Settings: undefined;
+  Login: undefined;  // 登入頁面，不需要額外參數
+  Register: undefined;  // 註冊頁面，不需要額外參數
+  MainApp: NavigatorScreenParams<TabParamList>;  // 主應用頁面，包含底部標籤導航參數
+  Profile: { userId?: number };  // 個人檔案頁面，可選的用戶 ID 參數
+  PostDetail: { postId: number };  // 貼文詳情頁面，需要貼文 ID 參數
+  Portfolio: undefined;  // 作品集頁面，不需要額外參數
+  SavedPosts: undefined;  // 已儲存貼文頁面，不需要額外參數
+  Settings: undefined;  // 設定頁面，不需要額外參數
 };
 
+// 定義底部標籤導航的參數型別
+// 包含所有底部標籤頁面的導航參數
 export type TabParamList = {
-  Home: undefined;
-  Search: undefined;
-  Notifications: undefined;
-  Messages: undefined;
-  Profile: undefined;
+  Home: undefined;  // 首頁，不需要額外參數
+  Search: undefined;  // 搜尋頁面，不需要額外參數
+  Notifications: undefined;  // 通知頁面，不需要額外參數
+  Messages: undefined;  // 訊息頁面，不需要額外參數
+  Profile: undefined;  // 個人檔案頁面，不需要額外參數
 }; 

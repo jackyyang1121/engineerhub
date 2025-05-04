@@ -6,23 +6,26 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types/navigation';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
+import { useAuth } from '../context/AuthContext';
 
+// 定義導航型別
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
+// 定義通知型別
 interface Notification {
   id: number;
-  type: 'follow' | 'like' | 'comment';
+  type: 'follow' | 'like' | 'comment';  // 通知類型：追蹤、點讚、留言
   user: {
     id: number;
     username: string;
     avatar: string;
   };
-  content?: string;
-  post_id?: number;
-  created_at: string;
+  content?: string;  // 可選的內容，用於留言通知
+  post_id?: number;  // 可選的貼文 ID，用於點讚和留言通知
+  created_at: string;  // 通知創建時間
 }
 
-// Skeleton 元件
+// Skeleton 元件，用於載入中狀態的佔位顯示
 const SkeletonNotification = () => (
   <View style={[styles.notificationItem, { opacity: 0.5 }]}> 
     <View style={styles.avatar} />
@@ -33,22 +36,27 @@ const SkeletonNotification = () => (
   </View>
 );
 
+// 通知頁面組件
 const NotificationsScreen: React.FC = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [error, setError] = useState('');
-  const navigation = useNavigation<NavigationProp>();
-  const [loading, setLoading] = useState(false);
+  const { token } = useAuth();  // 使用 useAuth hook 獲取 token
+  const [notifications, setNotifications] = useState<Notification[]>([]);  // 儲存通知列表
+  const [error, setError] = useState('');  // 儲存錯誤訊息
+  const navigation = useNavigation<NavigationProp>();  // 使用導航 hook
+  const [loading, setLoading] = useState(false);  // 控制載入中狀態
 
+  // 頁面載入時獲取通知
   useEffect(() => {
     setLoading(true);
     fetchNotifications().finally(() => setLoading(false));
-  }, []);
+  }, [token]);
 
+  // 獲取通知列表
   const fetchNotifications = async () => {
     try {
-      // 修正 API 路徑，假設後端支援 notifications/notifications/
+      if (!token) return;
+      // 根據 apps/notifications/notifications/ 設定 API 路徑
       const response = await axios.get('http://10.0.2.2:8000/api/notifications/notifications/', {
-        headers: { Authorization: `Token YOUR_TOKEN_HERE` },
+        headers: { Authorization: `Token ${token}` },
       });
       setNotifications(response.data.results || response.data);
     } catch (err) {
@@ -56,10 +64,11 @@ const NotificationsScreen: React.FC = () => {
     }
   };
 
+  // 處理追蹤請求
   const handleFollow = async (userId: number) => {
     try {
       await axios.post(`http://10.0.2.2:8000/api/users/follow/${userId}/`, {}, {
-        headers: { Authorization: `Token YOUR_TOKEN_HERE` },
+        headers: { Authorization: `Token ${token}` },
       });
       // 更新通知狀態
       fetchNotifications();
@@ -68,11 +77,14 @@ const NotificationsScreen: React.FC = () => {
     }
   };
 
+  // 處理通知點擊
   const handleNotificationPress = (item: Notification) => {
     // TODO: 根據 item.type 跳轉對應頁面
   };
 
+  // 渲染通知項目
   const renderNotification = ({ item }: { item: Notification }) => {
+    // 根據通知類型獲取對應文字
     const getNotificationText = () => {
       switch (item.type) {
         case 'follow':
@@ -111,6 +123,7 @@ const NotificationsScreen: React.FC = () => {
     );
   };
 
+  // 載入中狀態顯示
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -121,6 +134,7 @@ const NotificationsScreen: React.FC = () => {
     );
   }
 
+  // 畫面渲染
   return (
     <SafeAreaView style={styles.safeArea}>
       {error ? (
@@ -140,6 +154,7 @@ const NotificationsScreen: React.FC = () => {
   );
 };
 
+// 定義樣式
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -197,34 +212,32 @@ const styles = StyleSheet.create({
     fontSize: FONTS.size.md,
     color: COLORS.text,
     fontFamily: FONTS.regular,
-    marginTop: 2,
+    marginBottom: 4,
   },
   time: {
     fontSize: FONTS.size.xs,
     color: COLORS.subText,
-    marginTop: 2,
     fontFamily: FONTS.regular,
   },
   followButton: {
     backgroundColor: COLORS.accent,
-    paddingHorizontal: 18,
-    paddingVertical: 7,
-    borderRadius: RADIUS.lg,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     ...SHADOW,
   },
   followButtonText: {
     color: COLORS.primary,
-    fontSize: FONTS.size.sm,
-    fontWeight: '600',
     fontFamily: FONTS.medium,
+    fontSize: FONTS.size.sm,
+    letterSpacing: 1,
   },
   error: {
     color: COLORS.error,
-    textAlign: 'center',
-    marginTop: 20,
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
+    textAlign: 'center',
   },
 });
 
-export default NotificationsScreen;
+export default NotificationsScreen;  // 導出通知頁面組件

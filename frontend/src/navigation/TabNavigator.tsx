@@ -1,3 +1,5 @@
+// 底部分頁導航器檔案，定義主頁、搜尋、通知、訊息、個人檔案等分頁
+
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -7,15 +9,17 @@ import SearchScreen from '../screens/SearchScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import MessagesScreen from '../screens/MessagesScreen';
 
+// 建立 Tab 導航器
 const Tab = createBottomTabNavigator();
 
+// TabNavigator 組件，定義底部分頁結構與圖示
 const TabNavigator: React.FC = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
+        // 根據 route.name 設定底部圖示
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap;
-          
           switch (route.name) {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
@@ -35,7 +39,6 @@ const TabNavigator: React.FC = () => {
             default:
               iconName = 'home';
           }
-          
           return <Ionicons name={iconName} size={size} color={color} />;
         },
         tabBarActiveTintColor: '#007AFF',
@@ -50,6 +53,7 @@ const TabNavigator: React.FC = () => {
         },
       })}
     >
+      {/* 定義底部分頁的每個頁面與對應組件 */}
       <Tab.Screen 
         name="Home" 
         component={HomeScreen} 
@@ -94,4 +98,4 @@ const TabNavigator: React.FC = () => {
   );
 };
 
-export default TabNavigator; 
+export default TabNavigator;  // 導出底部分頁導航器供 AppNavigator 使用 

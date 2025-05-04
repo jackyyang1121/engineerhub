@@ -5,38 +5,45 @@ import { View, Text, TextInput, Button, FlatList, ScrollView, TouchableOpacity, 
 import axios from 'axios';  // 引入 axios 函數庫，用於發送 HTTP 請求到後端 API
 import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 import { StyleSheet } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
+// 定義用戶型別
 interface User {
   id: number;
   username: string;
 }
 
+// 定義貼文型別
 interface Post {
   id: number;
   author: { username: string };
   content: string;
 }
 
-// Skeleton 元件
+// Skeleton 元件，用於載入中狀態的佔位顯示
 const SkeletonResult = () => (
   <View style={[styles.resultCard, { opacity: 0.5 }]}> 
     <View style={{ width: '60%', height: 18, backgroundColor: COLORS.border, borderRadius: 6 }} />
   </View>
 );
 
+// 搜尋頁面組件
 const SearchScreen: React.FC = () => {
+  const { token } = useAuth();  // 使用 useAuth hook 獲取 token
   const [query, setQuery] = useState('');  // 定義狀態變數 query，用於儲存用戶輸入的搜尋關鍵字
   const [users, setUsers] = useState<User[]>([]);  // 定義狀態變數 users，用於儲存搜尋到的用戶列表
   const [posts, setPosts] = useState<Post[]>([]);  // 定義狀態變數 posts，用於儲存搜尋到的貼文列表
   const [error, setError] = useState('');  // 定義狀態變數 error，用於儲存搜尋過程中的錯誤訊息
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);  // 定義狀態變數 loading，用於控制載入中狀態
 
+  // 處理搜尋請求
   const handleSearch = async () => {
     setLoading(true);
     try {
-      // 發送 GET 請求到後端搜尋 API，傳遞查詢參數 q
+      if (!token) return;
+      // 根據 apps/search/search/ 設定 API 路徑
       const response = await axios.get(`http://10.0.2.2:8000/api/search/search/?q=${query}`, {
-        headers: { Authorization: `Token YOUR_TOKEN_HERE` },  // 添加認證 Token 到請求頭，需替換為實際 Token
+        headers: { Authorization: `Token ${token}` },
       });
       setUsers(response.data.users);  // 更新 users 狀態，儲存搜尋到的用戶資料
       setPosts(response.data.posts);  // 更新 posts 狀態，儲存搜尋到的貼文資料
@@ -48,6 +55,7 @@ const SearchScreen: React.FC = () => {
     }
   };
 
+  // 載入中狀態顯示
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -62,6 +70,7 @@ const SearchScreen: React.FC = () => {
     ...posts.map(p => ({ type: 'post', ...p })),
   ];
 
+  // 畫面渲染
   return (
     <SafeAreaView style={styles.safeArea}>
       <FlatList
@@ -110,6 +119,7 @@ const SearchScreen: React.FC = () => {
   );
 };
 
+// 定義樣式
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -195,9 +205,9 @@ const styles = StyleSheet.create({
     borderRadius: RADIUS.sm,
     padding: 14,
     marginBottom: 10,
+    ...SHADOW,
     borderWidth: 1,
     borderColor: COLORS.border,
-    ...SHADOW,
   },
   resultText: {
     color: COLORS.text,
@@ -209,8 +219,8 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: 24,
   },
 });
 
-export default SearchScreen;  // 導出 SearchScreen 組件，供導航器或其他檔案使用
+export default SearchScreen;  // 導出搜尋頁面組件

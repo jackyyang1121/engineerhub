@@ -1,4 +1,4 @@
-// 首頁檔案，顯示推薦貼文列表並允許用戶發文，實現滑動式頁面瀏覽
+// 首頁（動態牆）頁面檔案，處理貼文串流、發文、無限滾動等功能
 
 import React, { useState, useEffect } from 'react';  // 引入 React 核心功能與鉤子
 import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Platform, SafeAreaView } from 'react-native';  // 引入 React Native 核心組件
@@ -66,6 +66,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     setLoading(true);
     const fetchPosts = async () => {
       try {
+        if (!token) return;
         const response = await axios.get(`http://10.0.2.2:8000/api/posts/posts/?page=${page}`,
           { headers: { Authorization: `Token ${token}` } });
         if (page === 1) {
@@ -84,27 +85,29 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   }, [token, page]);
 
   const handlePost = async () => {
-    // 處理發文邏輯，當用戶點擊發文按鈕時觸發
     if (!content.trim()) {
       setError('貼文內容不能為空');
       return;
     }
     try {
-      // 發送 POST 請求到後端 API 創建新貼文
+      if (!token) return;
       await axios.post('http://10.0.2.2:8000/api/posts/posts/', {
-        content,  // 傳送用戶輸入的貼文內容
+        content,
       }, {
-        headers: { Authorization: `Token ${token}` },  // 使用 context 中的 token
+        headers: { Authorization: `Token ${token}` },
       });
-      setContent('');  // 發文成功後清空輸入框
-      // 重新獲取最新的推薦貼文列表
-      const response = await axios.get('http://10.0.2.2:8000/api/posts/posts/', {
-        headers: { Authorization: `Token ${token}` },  // 使用 context 中的 token
+      setContent('');
+      const response = await axios.get(`http://10.0.2.2:8000/api/posts/posts/?page=1`, {
+        headers: { Authorization: `Token ${token}` },
       });
-      setPosts(response.data);  // 更新貼文列表狀態
-      setError(''); // 發文成功清空錯誤訊息
-    } catch (err) {
-      setError('發文失敗');  // 若發文失敗，設定錯誤訊息
+      setPosts(response.data.results || response.data);
+      setError('');
+    } catch (err: any) {
+      if (err.response?.data) {
+        setError(JSON.stringify(err.response.data));
+      } else {
+        setError('發文失敗');
+      }
     }
   };
 

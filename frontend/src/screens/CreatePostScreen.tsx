@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 
+// 發佈貼文頁面檔案，處理用戶發文、內容輸入、媒體上傳等功能
+
 const CreatePostScreen = () => {
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
