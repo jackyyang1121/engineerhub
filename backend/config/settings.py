@@ -24,7 +24,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',          # REST API 框架
     'rest_framework.authtoken', # Token 認證
-    'apps.users.apps.ConfigConfig'  # 自定義用戶應用
+    'apps.users',  # 自定義用戶應用
+    'apps.posts',  
 ]
 
 # 中間件設定

@@ -3,9 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button } from 'react-native';
 import axios from 'axios';  // 用於發送 HTTP 請求
+import { useAuth } from '../context/AuthContext';  // 導入 useAuth hook
 
 // ProfileScreen 組件，負責個人檔案頁面邏輯與畫面
 const ProfileScreen: React.FC = () => {
+  const { token } = useAuth();  // 使用 useAuth hook 獲取 token
   // 狀態：用戶名、電子信箱、手機號碼、技能、自介、錯誤訊息
   const [username, setUsername] = useState('');  // 儲存用戶名
   const [email, setEmail] = useState('');        // 儲存電子信箱
@@ -19,7 +21,7 @@ const ProfileScreen: React.FC = () => {
     const fetchProfile = async () => {
       try {
         const response = await axios.get('http://10.0.2.2:8000/api/users/profile/', {
-          headers: { Authorization: `Token YOUR_TOKEN_HERE` },  // 傳送認證 Token
+          headers: { Authorization: `Token ${token}` },  // 使用 context 中的 token
         });
         const user = response.data;  // 獲取用戶資料
         setUsername(user.username);  // 設定用戶名
@@ -31,8 +33,10 @@ const ProfileScreen: React.FC = () => {
         setError('獲取個人檔案失敗');  // 設定錯誤訊息
       }
     };
-    fetchProfile();  // 執行獲取資料函數
-  }, []);  // 空依賴陣列，僅在初次渲染時執行
+    if (token) {  // 只有在有 token 時才執行
+      fetchProfile();
+    }
+  }, [token]);  // 依賴 token，當 token 改變時重新獲取資料
 
   // 處理個人檔案更新邏輯
   const handleUpdate = async () => {
@@ -41,12 +45,13 @@ const ProfileScreen: React.FC = () => {
         username,          // 傳送用戶名
         email,             // 傳送電子信箱
         phone_number: phoneNumber,  // 傳送手機號碼
-        skills: skills.split(','),  // 將技能標籤轉為陣列
+        skills: skills.split(',').map(s => s.trim()),  // 將技能標籤轉為陣列並去除空格
         bio,               // 傳送自介
       }, {
-        headers: { Authorization: `Token YOUR_TOKEN_HERE` },  // 傳送認證 Token
+        headers: { Authorization: `Token ${token}` },  // 使用 context 中的 token
       });
       console.log('更新成功');  // 輸出更新成功訊息
+      setError('');  // 清空錯誤訊息
     } catch (err) {
       setError('更新失敗');  // 設定錯誤訊息
     }
@@ -66,7 +71,7 @@ const ProfileScreen: React.FC = () => {
       <Text>自介</Text>
       <TextInput value={bio} onChangeText={setBio} />
       <Button title="更新" onPress={handleUpdate} /> 
-      {error ? <Text>{error}</Text> : null} 
+      {error ? <Text style={{ color: 'red' }}>{error}</Text> : null} 
     </View>
   );
 };
