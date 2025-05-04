@@ -2,3 +2,4 @@ django
 psycopg2 
 djangorestframework
 django.core.management
+djangorestframework-authtoken

@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text } from 'react-native';
 import axios from 'axios';
+import { StackNavigationProp } from '@react-navigation/stack';
 
-const LoginScreen: React.FC = () => {
+type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
+};
+type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
+
+interface LoginScreenProps {
+  navigation: LoginScreenNavigationProp;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [username, setUsername] = useState('');  // 儲存用戶名
   const [password, setPassword] = useState('');  // 儲存密碼
   const [error, setError] = useState('');        // 儲存錯誤訊息
@@ -33,6 +44,7 @@ const LoginScreen: React.FC = () => {
       />
       <Button title="登入" onPress={handleLogin} />
       {error && <Text>{error}</Text>}
+      <Button title="註冊" onPress={() => navigation.navigate('Register')} />
     </View>
   );
 };

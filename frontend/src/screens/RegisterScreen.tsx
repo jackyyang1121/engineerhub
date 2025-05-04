@@ -12,16 +12,19 @@ const RegisterScreen: React.FC = () => {
 
   const handleRegister = async () => {
     try {
-      // 發送註冊請求到後端，技能以逗號分隔轉為陣列
+      // 發送註冊請求到後端，技能以逗號分隔轉為陣列並去除空白
       const response = await axios.post('http://10.0.2.2:8000/api/users/register/', {
         username,
         email,
         phone_number: phoneNumber,
         password,
-        skills: skills.split(','),
+        skills: skills.split(',').map(s => s.trim()),
       });
       console.log('註冊成功，Token:', response.data.token);
     } catch (err) {
+      // 印出後端回傳的詳細錯誤訊息
+      const error = err as any;
+      console.log(error.response?.data);
       setError('註冊失敗，請檢查輸入');
     }
   };
