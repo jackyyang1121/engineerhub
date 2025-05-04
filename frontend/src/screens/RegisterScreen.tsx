@@ -1,31 +1,32 @@
+// 註冊頁面檔案，處理用戶註冊功能
+
 import React, { useState } from 'react';
 import { View, TextInput, Button, Text } from 'react-native';
-import axios from 'axios';
+import axios from 'axios';  // 用於發送 HTTP 請求
 
 const RegisterScreen: React.FC = () => {
-  const [username, setUsername] = useState('');      // 儲存用戶名
-  const [email, setEmail] = useState('');            // 儲存電子信箱
-  const [phoneNumber, setPhoneNumber] = useState(''); // 儲存手機號碼
-  const [password, setPassword] = useState('');      // 儲存密碼
-  const [skills, setSkills] = useState('');          // 儲存技能標籤
+  const [username, setUsername] = useState('');      // 儲存用戶名輸入
+  const [email, setEmail] = useState('');            // 儲存電子信箱輸入
+  const [phoneNumber, setPhoneNumber] = useState(''); // 儲存手機號碼輸入
+  const [password, setPassword] = useState('');      // 儲存密碼輸入
+  const [skills, setSkills] = useState('');          // 儲存技能標籤輸入
+  const [bio, setBio] = useState('');                // 儲存自介輸入
   const [error, setError] = useState('');            // 儲存錯誤訊息
 
   const handleRegister = async () => {
+    // 處理註冊邏輯
     try {
-      // 發送註冊請求到後端，技能以逗號分隔轉為陣列並去除空白
       const response = await axios.post('http://10.0.2.2:8000/api/users/register/', {
-        username,
-        email,
-        phone_number: phoneNumber,
-        password,
-        skills: skills.split(',').map(s => s.trim()),
+        username,          // 傳送用戶名
+        email,             // 傳送電子信箱
+        phone_number: phoneNumber,  // 傳送手機號碼
+        password,          // 傳送密碼
+        skills: skills.split(','),  // 將技能標籤轉為陣列
+        bio,               // 傳送自介
       });
-      console.log('註冊成功，Token:', response.data.token);
+      console.log('註冊成功，Token:', response.data.token);  // 輸出註冊成功的 Token
     } catch (err) {
-      // 印出後端回傳的詳細錯誤訊息
-      const error = err as any;
-      console.log(error.response?.data);
-      setError('註冊失敗，請檢查輸入');
+      setError('註冊失敗，請檢查輸入');  // 設定錯誤訊息
     }
   };
 
@@ -41,15 +42,17 @@ const RegisterScreen: React.FC = () => {
       <TextInput
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry  // 隱藏密碼輸入
         placeholder="請輸入密碼"
       />
       <Text>技能標籤（以逗號分隔）</Text>
       <TextInput value={skills} onChangeText={setSkills} placeholder="如：Python, Java" />
-      <Button title="註冊" onPress={handleRegister} />
-      {error && <Text>{error}</Text>}
+      <Text>自介</Text>
+      <TextInput value={bio} onChangeText={setBio} placeholder="請輸入自介" />
+      <Button title="註冊" onPress={handleRegister} />  // 註冊按鈕
+      {error && <Text>{error}</Text>}  // 顯示錯誤訊息
     </View>
   );
 };
 
-export default RegisterScreen;
+export default RegisterScreen;  // 導出註冊頁面組件
