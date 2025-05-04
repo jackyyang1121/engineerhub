@@ -1,10 +1,19 @@
 # 用戶模型檔案，定義自定義用戶與個人檔案相關字段
+# 功能：擴展 Django 內建 User，支援手機、技能、自介等欄位
+# 資料來源：註冊/編輯時由前端傳入，API 讀取/更新
+# 資料流向：被 views.py 查詢、序列化後回傳給前端，或由前端 POST/PUT 新增/修改
 
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser  # 導入 Django 內建 User 抽象類
 from django.db import models
 
 class User(AbstractUser):
-    # 自定義用戶模型，擴展 Django 內建用戶功能
+    """
+    自定義用戶模型，擴展 Django 內建用戶功能
+    phone_number: 手機號碼（唯一，可空）
+    email: 電子信箱（唯一，可空）
+    skills: 技能標籤（JSON 陣列）
+    bio: 個人簡介
+    """
     phone_number = models.CharField(
         max_length=15, 
         unique=True, 
