@@ -1,7 +1,8 @@
 // 首頁檔案，顯示推薦貼文列表並允許用戶發文，實現滑動式頁面瀏覽
 
 import React, { useState, useEffect } from 'react';  // 引入 React 核心功能與鉤子
-import { View, Text, TextInput, Button, FlatList } from 'react-native';  // 引入 React Native 核心組件
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';  // 引入 React Native 核心組件
+import { StackNavigationProp } from '@react-navigation/stack';
 import axios from 'axios';  // 引入 axios 用於發送 HTTP 請求
 import { useAuth } from '../context/AuthContext';  // 導入 useAuth hook
 
@@ -15,7 +16,22 @@ interface Post {
   like_count: number;
 }
 
-const HomeScreen: React.FC = () => {
+type RootStackParamList = {
+  Login: undefined;
+  Register: undefined;
+  Home: undefined;
+  Profile: undefined;
+  PostDetail: undefined;
+  Search: undefined;
+};
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
+
+interface HomeScreenProps {
+  navigation: HomeScreenNavigationProp;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { token } = useAuth();  // 使用 useAuth hook 獲取 token
   const [posts, setPosts] = useState<Post[]>([]);  // 使用 Post[] 型別
   const [content, setContent] = useState('');  // 定義狀態變數 content，用於儲存用戶輸入的發文內容
@@ -65,27 +81,56 @@ const HomeScreen: React.FC = () => {
   };
 
   return (
-    <View>
-      <Text>發文</Text>  
-      <TextInput
-        value={content}  
-        onChangeText={setContent}  
-        placeholder="請輸入貼文內容"  
-      />
-      <Button title="發文" onPress={handlePost} /> 
-      {error && <Text>{error}</Text>}  
-      <FlatList
-        data={posts}  
-        keyExtractor={(item) => item.id.toString()}  
-        renderItem={({ item }) => (  
-          <View>
-            <Text>{item.author.username}: {item.content}</Text>  
-            <Text>點讚數: {item.like_count}</Text>  
-          </View>
-        )}
-      /> 
-    </View>
+    <FlatList
+      data={posts}
+      keyExtractor={(item) => item.id.toString()}
+      renderItem={({ item }) => (
+        <View>
+          <Text>{item.author.username}: {item.content}</Text>
+          <Text>點讚數: {item.like_count}</Text>
+        </View>
+      )}
+      ListHeaderComponent={
+        <View>
+          <Text>發文</Text>
+          <TextInput
+            value={content}
+            onChangeText={setContent}
+            placeholder="請輸入貼文內容"
+          />
+          <Button title="發文" onPress={handlePost} />
+          {error && <Text>{error}</Text>}
+        </View>
+      }
+      contentContainerStyle={{ padding: 24, paddingTop: 48, paddingBottom: 24 }}
+    />
   );
 };
+
+const styles = StyleSheet.create({
+  tabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    height: 56,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderColor: '#eee',
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 10,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  tabText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+});
 
 export default HomeScreen;  // 導出 HomeScreen 組件供其他檔案使用

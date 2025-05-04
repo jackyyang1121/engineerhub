@@ -17,6 +17,10 @@ type RootStackParamList = {
   Login: undefined;
   Register: undefined;
   MainApp: undefined;
+  PostDetail: undefined;
+  Home: undefined;
+  Profile: undefined;
+  Search: undefined;
 };
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
@@ -42,7 +46,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         password,  // 傳送密碼
       });
       setToken(response.data.token);
-      navigation.navigate('MainApp');  // 改為導向 MainApp
+      navigation.replace('MainApp');  // 登入成功後導向底部分頁主頁
     } catch (err: any) {
       // 顯示具體的錯誤訊息
       if (err.response?.data) {

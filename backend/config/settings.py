@@ -26,6 +26,9 @@ INSTALLED_APPS = [
     'rest_framework.authtoken', # Token 認證
     'apps.users',  # 自定義用戶應用
     'apps.posts',  
+    'apps.notifications', # 新增通知應用
+    'apps.private_messages', # 新增私訊應用
+    'apps.portfolios', # 新增作品集應用
 ]
 
 # 中間件設定

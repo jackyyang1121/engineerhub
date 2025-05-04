@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from .serializers import UserSerializer, RegisterSerializer
+from .models import User
+from apps.posts.models import Post
+from apps.posts.serializers import PostSerializer
 
 class RegisterView(generics.CreateAPIView):
     # 用戶註冊視圖
@@ -41,3 +44,22 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         # 回傳當前登入用戶的資料
         return self.request.user
+
+class SettingsView(generics.UpdateAPIView):
+    # 用戶設定視圖，支援更新用戶設定
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]  # 僅允許已認證用戶訪問
+
+    def get_object(self):
+        # 返回當前登入用戶的資料以供更新
+        return self.request.user
+
+class SavedPostsView(generics.ListAPIView):
+    # 已儲存貼文視圖，列出用戶儲存的貼文
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticated]  # 僅允許已認證用戶訪問
+
+    def get_queryset(self):
+        # 返回當前用戶儲存的貼文列表
+        user = self.request.user
+        return Post.objects.filter(save__user=user)  # 過濾出用戶儲存的貼文

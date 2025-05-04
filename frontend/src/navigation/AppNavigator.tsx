@@ -1,42 +1,156 @@
 // 導航器檔案，整合所有頁面導航
 
-import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from '../screens/LoginScreen';      // 導入登入頁面
-import RegisterScreen from '../screens/RegisterScreen'; // 導入註冊頁面
-import TabNavigator from './TabNavigator';
-import PostDetailScreen from '../screens/PostDetailScreen'; // 導入貼文詳情頁面
-import { AuthProvider } from '../context/AuthContext';
+import React from 'react';  // 引入 React 核心功能，用於構建組件
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { RootStackParamList, TabParamList } from '../types/navigation';
+import LoginScreen from '../screens/LoginScreen';  // 導入登入頁面組件
+import RegisterScreen from '../screens/RegisterScreen';  // 導入註冊頁面組件
+import ProfileScreen from '../screens/ProfileScreen';  // 導入個人檔案頁面組件
+import HomeScreen from '../screens/HomeScreen';  // 導入首頁組件
+import PostDetailScreen from '../screens/PostDetailScreen';  // 導入貼文詳情頁面組件
+import SearchScreen from '../screens/SearchScreen';  // 導入搜尋頁面組件
+import MessagesScreen from '../screens/MessagesScreen';  // 導入私訊頁面組件
+import PortfolioScreen from '../screens/PortfolioScreen';  // 導入作品集頁面組件
+import SavedPostsScreen from '../screens/SavedPostsScreen';  // 導入已儲存貼文頁面組件
+import NotificationsScreen from '../screens/NotificationsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-const Stack = createStackNavigator();  // 創建堆疊導航器
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const Tab = createBottomTabNavigator<TabParamList>();
 
-const AppNavigator: React.FC = () => {
+const TabNavigator = () => {
   return (
-    <AuthProvider>
-      <Stack.Navigator initialRouteName="Login">
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          switch (route.name) {
+            case 'Home':
+              iconName = focused ? 'home' : 'home-outline';
+              break;
+            case 'Search':
+              iconName = focused ? 'search' : 'search-outline';
+              break;
+            case 'Notifications':
+              iconName = focused ? 'notifications' : 'notifications-outline';
+              break;
+            case 'Messages':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+              break;
+            case 'Profile':
+              iconName = focused ? 'person' : 'person-outline';
+              break;
+            default:
+              iconName = 'help-outline';
+          }
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#007AFF',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: {
+          borderTopWidth: 0.5,
+          borderTopColor: '#E5E5E5',
+          paddingBottom: 5,
+          paddingTop: 5,
+          height: 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: 5,
+        },
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} options={{ title: '首頁' }} />
+      <Tab.Screen name="Search" component={SearchScreen} options={{ title: '搜尋' }} />
+      <Tab.Screen name="Notifications" component={NotificationsScreen} options={{ title: '通知' }} />
+      <Tab.Screen name="Messages" component={MessagesScreen} options={{ title: '訊息' }} />
+      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: '我的' }} />
+    </Tab.Navigator>
+  );
+};
+
+const AppNavigator = () => {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#fff',
+          },
+          headerTintColor: '#000',
+          headerTitleStyle: {
+            fontWeight: '600',
+          },
+          headerShadowVisible: false,
+          animation: 'slide_from_right',
+          animationDuration: 200,
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
+          fullScreenGestureEnabled: true,
+        }}
+      >
         <Stack.Screen 
           name="Login" 
-          component={LoginScreen}
+          component={LoginScreen} 
           options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="Register" 
-          component={RegisterScreen}
+          component={RegisterScreen} 
           options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="MainApp" 
-          component={TabNavigator}
+          component={TabNavigator} 
           options={{ headerShown: false }}
         />
         <Stack.Screen 
           name="PostDetail" 
           component={PostDetailScreen}
-          options={{ title: '貼文詳情' }}
+          options={({ route }) => ({ 
+            title: '貼文詳情',
+            animation: 'slide_from_bottom',
+          })}
+        />
+        <Stack.Screen 
+          name="Profile" 
+          component={ProfileScreen}
+          options={({ route }) => ({ 
+            title: '個人檔案',
+            animation: 'slide_from_right',
+          })}
+        />
+        <Stack.Screen 
+          name="Portfolio" 
+          component={PortfolioScreen}
+          options={{ 
+            title: '作品集',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="SavedPosts" 
+          component={SavedPostsScreen}
+          options={{ 
+            title: '已儲存',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={{ 
+            title: '設定',
+            animation: 'slide_from_right',
+          }}
         />
       </Stack.Navigator>
-    </AuthProvider>
+    </NavigationContainer>
   );
 };
 
-export default AppNavigator;  // 導出導航器組件
+export default AppNavigator;  // 導出 AppNavigator 組件，供應用主檔案（如 App.tsx）使用

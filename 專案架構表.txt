@@ -42,7 +42,7 @@ backend/
 │   │   ├── urls.py          # 通知相關 URL 路由
 │   │   └── tests.py         # 通知相關測試
 │   │
-│   ├── messages/            # 私訊管理應用
+│   ├── private_messages/            # 私訊管理應用
 │   │   ├── __init__.py
 │   │   ├── admin.py
 │   │   ├── apps.py
