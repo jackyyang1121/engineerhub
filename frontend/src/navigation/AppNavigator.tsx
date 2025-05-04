@@ -75,7 +75,6 @@ const TabNavigator = () => {
 
 const AppNavigator = () => {
   return (
-    <NavigationContainer>
       <Stack.Navigator
         screenOptions={{
           headerStyle: {
@@ -149,7 +148,6 @@ const AppNavigator = () => {
           }}
         />
       </Stack.Navigator>
-    </NavigationContainer>
   );
 };
 

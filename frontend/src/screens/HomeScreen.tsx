@@ -1,16 +1,19 @@
 // 首頁檔案，顯示推薦貼文列表並允許用戶發文，實現滑動式頁面瀏覽
 
 import React, { useState, useEffect } from 'react';  // 引入 React 核心功能與鉤子
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';  // 引入 React Native 核心組件
+import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Platform, SafeAreaView } from 'react-native';  // 引入 React Native 核心組件
 import { StackNavigationProp } from '@react-navigation/stack';
 import axios from 'axios';  // 引入 axios 用於發送 HTTP 請求
 import { useAuth } from '../context/AuthContext';  // 導入 useAuth hook
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 
 // 定義 Post 介面
 interface Post {
   id: number;
   author: {
     username: string;
+    avatar?: string;
   };
   content: string;
   like_count: number;
@@ -31,29 +34,54 @@ interface HomeScreenProps {
   navigation: HomeScreenNavigationProp;
 }
 
+// Skeleton 元件
+const SkeletonCard = () => (
+  <View style={[styles.card, { opacity: 0.5 }]}> 
+    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+      <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.border, marginRight: 12 }} />
+      <View style={{ flex: 1 }}>
+        <View style={{ width: 80, height: 12, backgroundColor: COLORS.border, marginBottom: 6, borderRadius: 6 }} />
+        <View style={{ width: 40, height: 10, backgroundColor: COLORS.border, borderRadius: 5 }} />
+      </View>
+    </View>
+    <View style={{ width: '100%', height: 18, backgroundColor: COLORS.border, marginBottom: 10, borderRadius: 6 }} />
+    <View style={{ width: '80%', height: 18, backgroundColor: COLORS.border, marginBottom: 10, borderRadius: 6 }} />
+    <View style={{ flexDirection: 'row', marginTop: 2 }}>
+      <View style={{ width: 40, height: 16, backgroundColor: COLORS.border, borderRadius: 8, marginRight: 10 }} />
+      <View style={{ width: 40, height: 16, backgroundColor: COLORS.border, borderRadius: 8 }} />
+    </View>
+  </View>
+);
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { token } = useAuth();  // 使用 useAuth hook 獲取 token
   const [posts, setPosts] = useState<Post[]>([]);  // 使用 Post[] 型別
   const [content, setContent] = useState('');  // 定義狀態變數 content，用於儲存用戶輸入的發文內容
   const [error, setError] = useState('');  // 定義狀態變數 error，用於儲存錯誤訊息
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    // 使用 useEffect 在組件初次渲染時獲取推薦貼文列表
+    setLoading(true);
     const fetchPosts = async () => {
       try {
-        // 發送 GET 請求到後端 API 獲取貼文列表
-        const response = await axios.get('http://10.0.2.2:8000/api/posts/posts/', {
-          headers: { Authorization: `Token ${token}` },  // 使用 context 中的 token
-        });
-        setPosts(response.data);  // 將獲取的貼文資料更新到 posts 狀態
+        const response = await axios.get(`http://10.0.2.2:8000/api/posts/posts/?page=${page}`,
+          { headers: { Authorization: `Token ${token}` } });
+        if (page === 1) {
+          setPosts(response.data.results || response.data);
+        } else {
+          setPosts(prev => [...prev, ...(response.data.results || response.data)]);
+        }
+        setHasMore(!!response.data.next);
       } catch (err) {
-        setError('獲取推薦貼文失敗');  // 若請求失敗，設定錯誤訊息
+        setError('獲取推薦貼文失敗');
+      } finally {
+        setLoading(false);
       }
     };
-    if (token) {  // 只有在有 token 時才執行
-      fetchPosts();
-    }
-  }, [token]);  // 依賴 token，當 token 改變時重新獲取資料
+    if (token) fetchPosts();
+  }, [token, page]);
 
   const handlePost = async () => {
     // 處理發文邏輯，當用戶點擊發文按鈕時觸發
@@ -80,56 +108,246 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
+  const handleLoadMore = () => {
+    if (hasMore && !loading) setPage(p => p + 1);
+  };
+
+  if (loading && posts.length === 0) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        {[1,2,3].map(i => <SkeletonCard key={i} />)}
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <FlatList
-      data={posts}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={({ item }) => (
-        <View>
-          <Text>{item.author.username}: {item.content}</Text>
-          <Text>點讚數: {item.like_count}</Text>
-        </View>
-      )}
-      ListHeaderComponent={
-        <View>
-          <Text>發文</Text>
-          <TextInput
-            value={content}
-            onChangeText={setContent}
-            placeholder="請輸入貼文內容"
-          />
-          <Button title="發文" onPress={handlePost} />
-          {error && <Text>{error}</Text>}
-        </View>
-      }
-      contentContainerStyle={{ padding: 24, paddingTop: 48, paddingBottom: 24 }}
-    />
+    <SafeAreaView style={styles.safeArea}>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <View style={styles.postBar}>
+            <TextInput
+              value={content}
+              onChangeText={setContent}
+              placeholder="分享新動態..."
+              style={styles.postInput}
+              placeholderTextColor={COLORS.subText}
+              multiline
+              accessibilityLabel="發文輸入框"
+            />
+            <View style={styles.postBarRow}>
+              <TouchableOpacity style={styles.postBtn} onPress={handlePost} activeOpacity={0.85} accessibilityLabel="發佈按鈕">
+                <Text style={styles.postBtnText}>發佈</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        }
+        stickyHeaderIndices={[0]}
+        renderItem={({ item }) => (
+          <View style={styles.card} accessibilityLabel="貼文卡片">
+            <View style={styles.row}>
+              <Image source={{ uri: item.author.avatar || 'https://placehold.co/40x40' }} style={styles.avatar} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.username}>{item.author.username}</Text>
+                <Text style={styles.time}>2小時前</Text>
+              </View>
+            </View>
+            <Text style={styles.content}>{item.content}</Text>
+            <View style={styles.footerRow}>
+              <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} accessibilityLabel="點讚按鈕">
+                <Text style={styles.iconText}>{item.like_count}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} accessibilityLabel="評論按鈕">
+                <Text style={styles.iconText}>評論</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7} accessibilityLabel="分享按鈕">
+                <Text style={styles.iconText}>分享</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        contentContainerStyle={[styles.listContent, { paddingTop: 16 }]}
+        removeClippedSubviews
+        initialNumToRender={8}
+        windowSize={10}
+        showsVerticalScrollIndicator={false}
+        onEndReached={handleLoadMore}
+        onEndReachedThreshold={0.2}
+        accessibilityLabel="貼文列表"
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  tabBar: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
+  card: {
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    marginBottom: 18,
+    padding: 20,
+    ...SHADOW,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  username: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.sm,
+    color: COLORS.accent,
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  content: {
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  footerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
-    height: 56,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderColor: '#eee',
+    marginTop: 2,
+  },
+  like: {
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.sm,
+    color: COLORS.accent,
+  },
+  headerCard: {
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    marginBottom: 22,
+    padding: 20,
+    ...SHADOW,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  headerTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.lg,
+    color: COLORS.primary,
+    marginBottom: 12,
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 14,
+  },
+  button: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+    ...SHADOW,
+  },
+  buttonText: {
+    color: COLORS.primary,
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    letterSpacing: 1,
+  },
+  error: {
+    color: COLORS.error,
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.sm,
+    marginTop: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  time: {
+    color: COLORS.subText,
+    fontSize: FONTS.size.xs,
+    fontFamily: FONTS.regular,
+    marginTop: 2,
+  },
+  iconBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 18,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: RADIUS.sm,
+  },
+  iconText: {
+    color: COLORS.accent,
+    fontSize: FONTS.size.sm,
+    marginLeft: 4,
+    fontFamily: FONTS.medium,
+  },
+  postBar: {
     position: 'absolute',
+    top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
     zIndex: 10,
+    paddingTop: Platform.OS === 'ios' ? 48 : 24,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    ...SHADOW,
   },
-  tabItem: {
-    flex: 1,
+  postInput: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    marginBottom: 10,
+    minHeight: 48,
+    maxHeight: 120,
+  },
+  postBarRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'flex-end',
   },
-  tabText: {
-    fontSize: 16,
-    color: '#007AFF',
+  postBtn: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 10,
+    paddingHorizontal: 28,
+    ...SHADOW,
+  },
+  postBtnText: {
+    color: COLORS.primary,
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.md,
+    letterSpacing: 1,
   },
 });
 

@@ -1,12 +1,13 @@
 // 設定頁面檔案，允許用戶更新個人設定
 
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { RootStackParamList } from '../types/navigation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -126,56 +127,65 @@ const SettingsScreen = () => {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={COLORS.accent} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView style={styles.container}>
-      {sections.map((section, index) => (
-        <View key={index} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-          <View style={styles.sectionContent}>
-            {section.items.map((item, itemIndex) => (
-              <TouchableOpacity
-                key={itemIndex}
-                style={styles.item}
-                onPress={item.onPress}
-                activeOpacity={0.7}
-              >
-                <View style={styles.itemLeft}>
-                  <Ionicons 
-                    name={item.icon} 
-                    size={22} 
-                    color={item.color || '#000'} 
-                    style={styles.itemIcon}
-                  />
-                  <Text style={[styles.itemTitle, item.color && { color: item.color }]}>
-                    {item.title}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#C7C7CC" />
-              </TouchableOpacity>
-            ))}
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container}>
+        {sections.map((section, index) => (
+          <View key={index} style={styles.section}>
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+            <View style={styles.sectionContent}>
+              {section.items.map((item, itemIndex) => (
+                <TouchableOpacity
+                  key={itemIndex}
+                  style={[
+                    styles.item,
+                    itemIndex === section.items.length - 1 && styles.lastItem
+                  ]}
+                  onPress={item.onPress}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.itemLeft}>
+                    <Ionicons 
+                      name={item.icon} 
+                      size={22} 
+                      color={item.color || COLORS.accent} 
+                      style={styles.itemIcon}
+                    />
+                    <Text style={[styles.itemTitle, item.color && { color: item.color }]}>
+                      {item.title}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={COLORS.subText} />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        </View>
-      ))}
-    </ScrollView>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F2F2F7',
   },
   section: {
     marginBottom: 20,
@@ -183,32 +193,32 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#8E8E93',
+    color: COLORS.subText,
     marginLeft: 16,
     marginBottom: 8,
     marginTop: 20,
+    fontFamily: FONTS.medium,
+    letterSpacing: 1,
   },
   sectionContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
     marginHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    ...SHADOW,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#C7C7CC',
+    borderBottomColor: COLORS.border,
+  },
+  lastItem: {
+    borderBottomWidth: 0,
   },
   itemLeft: {
     flexDirection: 'row',
@@ -219,7 +229,8 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 16,
-    color: '#000',
+    color: COLORS.text,
+    fontFamily: FONTS.regular,
   },
 });
 

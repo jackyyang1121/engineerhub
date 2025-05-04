@@ -1,10 +1,11 @@
 // 登入頁面檔案，處理用戶登入功能
 
 import React, { useState } from 'react';
-import { View, TextInput, Button, Text, ScrollView } from 'react-native';
+import { View, TextInput, Button, Text, ScrollView, TouchableOpacity, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
 import axios from 'axios';  // 用於發送 HTTP 請求
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAuth } from '../context/AuthContext';
+import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 
 // 定義導航參數型別
 // RootStackParamList 定義了三個頁面：Login、Register、Home
@@ -59,27 +60,111 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
   // 畫面渲染
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 48 }}>
-      <View>
-        <Text>用戶名</Text>
-        <TextInput 
-          value={username} 
-          onChangeText={setUsername} 
-          placeholder="請輸入用戶名" 
-        />
-        <Text>密碼</Text>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry 
-          placeholder="請輸入密碼"
-        />
-        <Button title="登入" onPress={handleLogin} />  
-        {error && <Text style={{ color: 'red' }}>{error}</Text>} 
-        <Button title="註冊" onPress={() => navigation.navigate('Register')} />
-      </View>
-    </ScrollView>
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={styles.content}>
+          <Text style={styles.header}>登入</Text>
+          <TextInput
+            value={username}
+            onChangeText={setUsername}
+            placeholder="請輸入用戶名"
+            style={styles.input}
+            placeholderTextColor={COLORS.subText}
+          />
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="請輸入密碼"
+            style={styles.input}
+            placeholderTextColor={COLORS.subText}
+            secureTextEntry
+          />
+          <TouchableOpacity style={styles.button} onPress={handleLogin} activeOpacity={0.85}>
+            <Text style={styles.buttonText}>登入</Text>
+          </TouchableOpacity>
+          {error && <Text style={styles.error}>{error}</Text>}
+          <TouchableOpacity style={styles.linkBtn} onPress={() => navigation.navigate('Register')} activeOpacity={0.7}>
+            <Text style={styles.linkText}>沒有帳號？註冊</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
+
+// 新增精緻化樣式
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  container: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 0,
+    paddingBottom: 0,
+  },
+  header: {
+    color: COLORS.accent,
+    fontFamily: FONTS.bold,
+    fontSize: 28,
+    marginBottom: 24,
+    textAlign: 'center',
+    letterSpacing: 1,
+  },
+  input: {
+    backgroundColor: COLORS.background,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    fontFamily: FONTS.regular,
+    fontSize: 20,
+    color: COLORS.text,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    marginBottom: 22,
+    minWidth: 260,
+    minHeight: 56,
+  },
+  button: {
+    backgroundColor: COLORS.accent,
+    borderRadius: RADIUS.sm,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+    ...SHADOW,
+  },
+  buttonText: {
+    color: COLORS.primary,
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.md,
+    letterSpacing: 1,
+  },
+  error: {
+    color: COLORS.error,
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.sm,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  linkBtn: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  linkText: {
+    color: COLORS.accent,
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    textDecorationLine: 'underline',
+  },
+});
 
 export default LoginScreen;  // 導出登入頁面組件
