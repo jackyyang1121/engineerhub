@@ -3,9 +3,9 @@
 // 資料來源：貼文資料
 // 資料流向：接收貼文資料，渲染貼文內容和互動功能
 
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
+import React, { useState } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, Animated, Pressable } from 'react-native';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION } from '../theme';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import CodePreview from './CodePreview';
 import { useNavigation } from '@react-navigation/native';
@@ -55,17 +55,40 @@ const { width } = Dimensions.get('window');
 
 const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment, onRepost, onSave }) => {
   const navigation = useNavigation<NavigationProp>();
+  const [pressedAction, setPressedAction] = useState<string | null>(null);
+  
+  // 處理動畫效果
+  const handlePressIn = (action: string) => {
+    setPressedAction(action);
+  };
+  
+  const handlePressOut = () => {
+    setPressedAction(null);
+  };
+  
+  // 獲取動作按鈕樣式（根據是否按下狀態）
+  const getActionStyle = (action: string) => {
+    return [
+      styles.actionButton,
+      pressedAction === action && styles.actionButtonPressed
+    ];
+  };
 
   return (
     <View style={styles.container}>
       <TouchableOpacity 
         style={styles.header}
         onPress={() => navigation.navigate('Profile', { userId: post.author.id })}
+        activeOpacity={0.7}
       >
-        <Image 
-          source={{ uri: post.author.avatar || 'https://placehold.co/40x40' }} 
-          style={styles.avatar} 
-        />
+        <View style={styles.avatarContainer}>
+          <Image 
+            source={{ uri: post.author.avatar || 'https://placehold.co/200/darkgray/white?text=' + post.author.username.charAt(0).toUpperCase() }} 
+            style={styles.avatar} 
+          />
+          <View style={styles.avatarBorder} />
+        </View>
+        
         <View style={styles.headerInfo}>
           <Text style={styles.username}>{post.author.username}</Text>
           <Text style={styles.time}>
@@ -77,8 +100,8 @@ const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment, onRepost, 
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity 
-        style={styles.content}
+      <Pressable 
+        style={({ pressed }) => [styles.content, pressed && styles.contentPressed]}
         onPress={() => navigation.navigate('PostDetail', { postId: post.id })}
       >
         <Text style={styles.text}>{post.content}</Text>
@@ -86,12 +109,13 @@ const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment, onRepost, 
         {post.media && post.media.length > 0 && (
           <View style={styles.mediaContainer}>
             {post.media.map((item) => (
-              <Image
-                key={item.id}
-                source={{ uri: item.file }}
-                style={styles.media}
-                resizeMode="cover"
-              />
+              <View key={item.id} style={styles.mediaWrapper}>
+                <Image
+                  source={{ uri: item.file }}
+                  style={styles.media}
+                  resizeMode="cover"
+                />
+              </View>
             ))}
           </View>
         )}
@@ -103,46 +127,62 @@ const PostItem: React.FC<PostItemProps> = ({ post, onLike, onComment, onRepost, 
             language={block.language}
           />
         ))}
-      </TouchableOpacity>
+      </Pressable>
 
       <View style={styles.footer}>
-        <TouchableOpacity 
-          style={styles.actionButton}
+        <Pressable 
+          style={({ pressed }) => getActionStyle('like')}
           onPress={() => onLike(post.id)}
+          onPressIn={() => handlePressIn('like')}
+          onPressOut={handlePressOut}
+          android_ripple={{ color: COLORS.ripple, borderless: true, radius: 20 }}
         >
           <Ionicons 
             name={post.is_liked ? "heart" : "heart-outline"} 
-            size={24} 
+            size={22} 
             color={post.is_liked ? COLORS.error : COLORS.accent} 
           />
-          <Text style={styles.actionText}>{post.like_count}</Text>
-        </TouchableOpacity>
+          <Text style={[styles.actionText, post.is_liked && styles.actionTextActive]}>
+            {post.like_count > 0 ? post.like_count : ''}
+          </Text>
+        </Pressable>
 
-        <TouchableOpacity 
-          style={styles.actionButton}
+        <Pressable 
+          style={({ pressed }) => getActionStyle('comment')}
           onPress={() => onComment(post.id)}
+          onPressIn={() => handlePressIn('comment')}
+          onPressOut={handlePressOut}
+          android_ripple={{ color: COLORS.ripple, borderless: true, radius: 20 }}
         >
-          <Ionicons name="chatbubble-outline" size={24} color={COLORS.accent} />
-          <Text style={styles.actionText}>{post.comment_count}</Text>
-        </TouchableOpacity>
+          <Ionicons name="chatbubble-outline" size={21} color={COLORS.accent} />
+          <Text style={styles.actionText}>
+            {post.comment_count > 0 ? post.comment_count : ''}
+          </Text>
+        </Pressable>
 
-        <TouchableOpacity 
-          style={styles.actionButton}
+        <Pressable 
+          style={({ pressed }) => getActionStyle('repost')}
           onPress={() => onRepost(post.id)}
+          onPressIn={() => handlePressIn('repost')}
+          onPressOut={handlePressOut}
+          android_ripple={{ color: COLORS.ripple, borderless: true, radius: 20 }}
         >
           <Ionicons name="repeat-outline" size={24} color={COLORS.accent} />
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity 
-          style={styles.actionButton}
+        <Pressable 
+          style={({ pressed }) => getActionStyle('save')}
           onPress={() => onSave(post.id)}
+          onPressIn={() => handlePressIn('save')}
+          onPressOut={handlePressOut}
+          android_ripple={{ color: COLORS.ripple, borderless: true, radius: 20 }}
         >
           <Ionicons 
             name={post.is_saved ? "bookmark" : "bookmark-outline"} 
-            size={24} 
-            color={post.is_saved ? COLORS.accent : COLORS.accent} 
+            size={22} 
+            color={post.is_saved ? COLORS.highlight : COLORS.accent} 
           />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </View>
   );
@@ -152,24 +192,36 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.md,
-    marginBottom: 16,
-    padding: 16,
-    ...SHADOW,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    marginBottom: SPACING.lg,
+    overflow: 'hidden',
+    ...SHADOW.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.divider,
+  },
+  avatarContainer: {
+    position: 'relative',
+    marginRight: SPACING.md,
   },
   avatar: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
+    borderRadius: RADIUS.full,
+  },
+  avatarBorder: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: RADIUS.full,
+    borderWidth: 1.5,
+    borderColor: COLORS.accent,
+    opacity: 0.7,
   },
   headerInfo: {
     flex: 1,
@@ -177,8 +229,9 @@ const styles = StyleSheet.create({
   username: {
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.sm,
-    color: COLORS.accent,
+    color: COLORS.text,
     marginBottom: 2,
+    letterSpacing: FONTS.letterSpacing.tight,
   },
   time: {
     fontFamily: FONTS.regular,
@@ -186,41 +239,59 @@ const styles = StyleSheet.create({
     color: COLORS.subText,
   },
   content: {
-    marginBottom: 12,
+    padding: SPACING.md,
+  },
+  contentPressed: {
+    backgroundColor: `${COLORS.elevated}40`, // 40% opacity
   },
   text: {
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
     color: COLORS.text,
-    lineHeight: 22,
-    marginBottom: 12,
+    lineHeight: FONTS.size.md * FONTS.lineHeight.normal,
+    marginBottom: SPACING.md,
   },
   mediaContainer: {
-    marginBottom: 12,
+    marginBottom: SPACING.sm,
+  },
+  mediaWrapper: {
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginBottom: SPACING.md,
+    ...SHADOW.sm,
   },
   media: {
-    width: width - 64,
-    height: 200,
-    borderRadius: RADIUS.sm,
-    marginBottom: 8,
+    width: '100%',
+    height: 220,
+    backgroundColor: COLORS.elevated, // 預載背景色
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingTop: 12,
+    borderTopColor: COLORS.divider,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.md,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 4,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: RADIUS.full,
+  },
+  actionButtonPressed: {
+    backgroundColor: `${COLORS.accent}15`, // 15% opacity
   },
   actionText: {
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.sm,
     color: COLORS.accent,
     marginLeft: 4,
+    minWidth: 20, // 確保數字有固定最小寬度
+  },
+  actionTextActive: {
+    color: COLORS.error,
   },
 });
 

@@ -1,13 +1,11 @@
 // 程式碼預覽元件，用於顯示貼文中的程式碼區塊
-// 功能：支援程式碼高亮、展開/收起、複製程式碼
+// 功能：支援展開/收起、複製程式碼
 // 資料來源：貼文中的程式碼區塊
-// 資料流向：接收程式碼和語言，渲染高亮後的程式碼
+// 資料流向：接收程式碼和語言，渲染程式碼
 
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
-import SyntaxHighlighter from 'react-native-syntax-highlighter';
-import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import Clipboard from '@react-native-clipboard/clipboard';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
@@ -60,13 +58,7 @@ const CodePreview: React.FC<CodePreviewProps> = ({ code, language, maxHeight = 2
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <SyntaxHighlighter
-          language={language.toLowerCase()}
-          style={docco}
-          customStyle={styles.code}
-        >
-          {code}
-        </SyntaxHighlighter>
+        <Text style={styles.codeText}>{code}</Text>
       </ScrollView>
     </View>
   );
@@ -108,11 +100,12 @@ const styles = StyleSheet.create({
   },
   codeContainer: {
     backgroundColor: COLORS.background,
-  },
-  code: {
     padding: 12,
-    fontFamily: 'monospace', // 使用标准的 monospace 字体替代 FONTS.mono
+  },
+  codeText: {
+    fontFamily: 'monospace', // 使用標準的 monospace 字體
     fontSize: FONTS.size.sm,
+    color: COLORS.text,
   },
 });
 

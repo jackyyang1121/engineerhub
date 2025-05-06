@@ -7,7 +7,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
-from .serializers import UserSerializer, RegisterSerializer
+from .serializers import UserSerializer, RegisterSerializer, LoginSerializer
 from .models import User
 from apps.posts.models import Post
 from apps.posts.serializers import PostSerializer
@@ -17,7 +17,7 @@ class RegisterView(generics.CreateAPIView):
     """
     用戶註冊視圖
     - POST: 註冊新用戶，回傳 token
-    - 欄位：username, email, phone_number, password, skills, bio
+    - 欄位：username, email, password
     - 回應：{"token": ...}
     """
     serializer_class = RegisterSerializer
@@ -34,35 +34,89 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(generics.GenericAPIView):
     """
     用戶登入視圖
-    - POST: 驗證用戶名與密碼，回傳 token
-    - 欄位：username, password
+    - POST: 驗證電子郵件與密碼，回傳 token
+    - 欄位：email, password
     - 回應：{"token": ...} 或 {"error": ...}
     """
+    serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]  # 允許未認證用戶訪問
 
     def post(self, request, *args, **kwargs):
-        # 處理登入請求
-        username = request.data.get("username")    # 獲取用戶名
-        password = request.data.get("password")    # 獲取密碼
-        user = authenticate(username=username, password=password)  # 驗證憑證
-        if user:
-            token, _ = Token.objects.get_or_create(user=user)  # 創建或獲取 Token
-            return Response({"token": token.key})  # 回傳 Token
-        return Response({"error": "無效的憑證"}, status=400)  # 回傳錯誤訊息
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        
+        # 使用 email 查找用戶
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error": "無效的電子郵件或密碼"}, status=400)
+        
+        # 驗證密碼
+        if user.check_password(password):
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({"token": token.key})
+        
+        return Response({"error": "無效的電子郵件或密碼"}, status=400)
 
-class ProfileView(generics.RetrieveUpdateAPIView):
+class ProfileView(APIView):
     """
     個人檔案視圖，支援讀取與更新
     - GET: 取得個人資料
     - PUT/PATCH: 更新個人資料
     - 權限：僅認證用戶
     """
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self):
-        return self.request.user
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
+    def patch(self, request):
+        user = request.user
+        print("Received data:", request.data)
+        
+        # 自行處理每個欄位，避開序列化器驗證問題
+        if 'username' in request.data and request.data['username']:
+            user.username = request.data['username']
+            
+        if 'email' in request.data:
+            if request.data['email'] and request.data['email'].strip():
+                user.email = request.data['email']
+            else:
+                user.email = None
+                
+        if 'phone_number' in request.data:
+            if request.data['phone_number'] and request.data['phone_number'].strip():
+                user.phone_number = request.data['phone_number']
+            else:
+                user.phone_number = None
+                
+        if 'bio' in request.data:
+            user.bio = request.data['bio']
+            
+        if 'skills' in request.data:
+            # 確保 skills 是列表
+            if isinstance(request.data['skills'], list):
+                # 過濾空字串
+                user.skills = [skill.strip() for skill in request.data['skills'] if isinstance(skill, str) and skill.strip()]
+            else:
+                return Response({"skills": "技能必須為陣列"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # 對於 avatar，忽略空字串和其他非檔案值
+        if 'avatar' in request.data and hasattr(request.data['avatar'], 'name'):
+            user.avatar = request.data['avatar']
+        
+        # 儲存用戶資料
+        try:
+            user.save()
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+        except Exception as e:
+            print("Save error:", str(e))
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 class UserDetailView(generics.RetrieveAPIView):
     queryset = User.objects.all()

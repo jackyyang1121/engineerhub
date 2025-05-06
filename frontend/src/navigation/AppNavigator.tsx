@@ -12,6 +12,7 @@ import HomeScreen from '../screens/HomeScreen';  // 導入首頁組件
 import PostDetailScreen from '../screens/PostDetailScreen';  // 導入貼文詳情頁面組件
 import SearchScreen from '../screens/SearchScreen';  // 導入搜尋頁面組件
 import MessagesScreen from '../screens/MessagesScreen';  // 導入私訊頁面組件
+import ChatScreen from '../screens/ChatScreen';  // 導入聊天頁面組件
 import PortfolioScreen from '../screens/PortfolioScreen';  // 導入作品集頁面組件
 import SavedPostsScreen from '../screens/SavedPostsScreen';  // 導入已儲存貼文頁面組件
 import NotificationsScreen from '../screens/NotificationsScreen';
@@ -161,6 +162,25 @@ const AppNavigator = () => {
             title: '發佈貼文',
             animation: 'slide_from_bottom',
           }}
+        />
+        <Stack.Screen 
+          name="ChatScreen" 
+          component={ChatScreen}
+          options={({ route }) => ({ 
+            title: route.params.otherUser.username,
+            animation: 'slide_from_right',
+            headerTitleStyle: {
+              fontFamily: 'Noto Sans TC',
+              fontWeight: '600',
+              fontSize: 18,
+              color: '#F9FAFB',
+            },
+            headerStyle: {
+              backgroundColor: '#0F1215',
+            },
+            headerTintColor: '#F9FAFB',
+            headerShadowVisible: true,
+          })}
         />
       </Stack.Navigator>
   );

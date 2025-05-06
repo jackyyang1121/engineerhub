@@ -8,6 +8,7 @@ from django.db.models import Count  # 引入 Django 的計數功能，用於統�
 from rest_framework.response import Response  # 引入 Response 用於自定義回應
 from .models import Post, Like, Comment, Repost, Save, PostMedia, CodeBlock  # 引入貼文相關模型
 from .serializers import PostSerializer, LikeSerializer, CommentSerializer, RepostSerializer, SaveSerializer  # 引入序列化器
+from django.shortcuts import get_object_or_404
 
 class PostListCreateView(generics.ListCreateAPIView):
     # 貼文列表與創建視圖，處理貼文列表顯示與新貼文創建
@@ -109,9 +110,34 @@ class LikeCreateView(generics.CreateAPIView):
     serializer_class = LikeSerializer  # 指定使用的序列化器為 LikeSerializer
     permission_classes = [permissions.IsAuthenticated]  # 設定權限：僅認證用戶可點讚
 
+    def create(self, request, *args, **kwargs):
+        # 獲取貼文ID
+        post_id = request.data.get('post')
+        
+        # 檢查是否已經點讚，如果已點讚則刪除點讚（取消點讚）
+        try:
+            existing_like = Like.objects.filter(
+                user=request.user,
+                post_id=post_id
+            ).first()
+            
+            if existing_like:
+                # 已存在點讚，則刪除（取消點讚）
+                existing_like.delete()
+                return Response(
+                    {"detail": "已取消點讚"}, 
+                    status=status.HTTP_200_OK
+                )
+        except Exception as e:
+            pass
+            
+        # 創建新的點讚
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
-        # 執行點讚創建時，將當前登入用戶設為點讚者
-        serializer.save(user=self.request.user)
+        post_id = self.request.data.get('post')
+        post = get_object_or_404(Post, id=post_id)
+        serializer.save(user=self.request.user, post=post)
 
 class CommentCreateView(generics.CreateAPIView):
     # 留言創建視圖，處理用戶對貼文的留言操作

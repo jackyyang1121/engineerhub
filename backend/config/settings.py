@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'apps.notifications', # 新增通知應用
     'apps.private_messages', # 私訊應用
     'apps.portfolios', # 新增作品集應用
+    'apps.search', # 新增搜尋應用
 ]
 
 # 中間件設定

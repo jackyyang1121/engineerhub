@@ -6,14 +6,46 @@
 
 from rest_framework import serializers
 from .models import Notification
+from apps.users.serializers import UserSerializer
+from apps.posts.serializers import PostSerializer, CommentSerializer
 
 class NotificationSerializer(serializers.ModelSerializer):
     """
     通知序列化器，將 Notification 模型序列化為 JSON
-    fields: id, sender, notification_type, post, comment, created_at, is_read
     """
+    # 深度序列化關聯用戶以返回詳細資訊
+    sender = UserSerializer(read_only=True)
+    recipient = UserSerializer(read_only=True)
+    
+    # 提供簡化訪問相關帖子和評論內容的方法
+    post_id = serializers.SerializerMethodField()
+    comment_content = serializers.SerializerMethodField()
+    
     class Meta:
         # 指定序列化的模型為Notification
         model = Notification
         # 定義需要序列化的字段
-        fields = ['id', 'sender', 'notification_type', 'post', 'comment', 'created_at', 'is_read']
+        fields = [
+            'id', 
+            'recipient', 
+            'sender', 
+            'notification_type', 
+            'post_id', 
+            'comment_content', 
+            'created_at', 
+            'is_read',
+            'status',
+            'content'
+        ]
+        
+    def get_post_id(self, obj):
+        """獲取相關貼文ID"""
+        if obj.post:
+            return obj.post.id
+        return None
+        
+    def get_comment_content(self, obj):
+        """獲取相關評論內容"""
+        if obj.comment:
+            return obj.comment.content
+        return None
