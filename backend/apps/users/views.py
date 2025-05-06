@@ -3,14 +3,15 @@
 # 資料來源：前端傳入資料、models.py、serializers.py
 # 資料流向：API 輸入/輸出 JSON，與前端互動
 
-from rest_framework import generics, permissions  # 引入通用視圖與權限控制
-from rest_framework.response import Response  # 用於回傳 API 響應
-from rest_framework.authtoken.models import Token  # 用於產生/查詢 Token
-from django.contrib.auth import authenticate  # 用於驗證用戶憑證
-from .serializers import UserSerializer, RegisterSerializer  # 用戶序列化器
-from .models import User  # 用戶模型
-from apps.posts.models import Post  # 貼文模型
-from apps.posts.serializers import PostSerializer  # 貼文序列化器
+from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
+from .serializers import UserSerializer, RegisterSerializer
+from .models import User
+from apps.posts.models import Post
+from apps.posts.serializers import PostSerializer
+from rest_framework.views import APIView
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -56,12 +57,32 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     - PUT/PATCH: 更新個人資料
     - 權限：僅認證用戶
     """
+    queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]  # 僅認證用戶可訪問
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_object(self):
-        # 回傳當前登入用戶的資料
         return self.request.user
+
+class UserDetailView(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_field = 'id'
+
+class FollowToggleView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, user_id):
+        target_user = User.objects.get(id=user_id)
+        if target_user == request.user:
+            return Response({'detail': '不能追蹤自己'}, status=status.HTTP_400_BAD_REQUEST)
+        if target_user in request.user.following.all():
+            request.user.following.remove(target_user)
+            return Response({'detail': '已取消追蹤'})
+        else:
+            request.user.following.add(target_user)
+            return Response({'detail': '已追蹤'})
 
 class SettingsView(generics.UpdateAPIView):
     """

@@ -13,6 +13,8 @@ class User(AbstractUser):
     email: 電子信箱（唯一，可空）
     skills: 技能標籤（JSON 陣列）
     bio: 個人簡介
+    avatar: 頭像
+    following: 追蹤關係
     """
     phone_number = models.CharField(
         max_length=15, 
@@ -29,13 +31,16 @@ class User(AbstractUser):
     )
     skills = models.JSONField(
         default=list, 
-        verbose_name='技能標籤'  # 用戶技能標籤，儲存為 JSON 陣列
+        verbose_name='技能標籤',  # 用戶技能標籤，儲存為 JSON 陣列
+        blank=True
     )
     bio = models.TextField(
         blank=True, 
         null=True, 
         verbose_name='自介'  # 用戶個人簡介
     )
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
+    following = models.ManyToManyField('self', symmetrical=False, related_name='followers', blank=True)
 
     def __str__(self):
         # 回傳用戶名的字串表示

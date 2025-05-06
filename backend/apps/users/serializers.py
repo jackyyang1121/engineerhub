@@ -11,9 +11,25 @@ class UserSerializer(serializers.ModelSerializer):
     用戶序列化器，用於個人檔案的讀取與更新
     fields: id, username, email, phone_number, skills, bio
     """
+    followers_count = serializers.SerializerMethodField()
+    following_count = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone_number', 'skills', 'bio']  # 可序列化的字段
+        fields = ['id', 'username', 'email', 'phone_number', 'skills', 'bio', 'avatar', 'followers_count', 'following_count']
+
+    def get_followers_count(self, obj):
+        return obj.followers.count()
+
+    def get_following_count(self, obj):
+        return obj.following.count()
+
+    def validate_skills(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("技能必須為陣列")
+        if any(not isinstance(skill, str) or not skill.strip() for skill in value):
+            raise serializers.ValidationError("技能標籤不能為空")
+        return [skill.strip() for skill in value if skill.strip()]
 
 class RegisterSerializer(serializers.ModelSerializer):
     """
