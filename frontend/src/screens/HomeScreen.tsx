@@ -175,7 +175,7 @@ const HomeScreen = () => {
           />
         )}
         keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: 0 }]}
         onRefresh={handleRefresh}
         refreshing={refreshing}
         onEndReached={handleLoadMore}
