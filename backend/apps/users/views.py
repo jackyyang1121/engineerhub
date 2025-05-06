@@ -34,8 +34,8 @@ class RegisterView(generics.CreateAPIView):
 class LoginView(generics.GenericAPIView):
     """
     用戶登入視圖
-    - POST: 驗證電子郵件與密碼，回傳 token
-    - 欄位：email, password
+    - POST: 驗證用戶名/電子郵件與密碼，回傳 token
+    - 欄位：identifier(用戶名或電子郵件), password
     - 回應：{"token": ...} 或 {"error": ...}
     """
     serializer_class = LoginSerializer
@@ -45,21 +45,29 @@ class LoginView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         
-        email = serializer.validated_data['email']
+        identifier = serializer.validated_data['identifier']
         password = serializer.validated_data['password']
         
-        # 使用 email 查找用戶
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({"error": "無效的電子郵件或密碼"}, status=400)
+        # 判斷是用戶名還是電子郵件
+        if '@' in identifier:
+            # 使用電子郵件登入
+            try:
+                user = User.objects.get(email=identifier)
+            except User.DoesNotExist:
+                return Response({"error": "無效的電子郵件或密碼"}, status=400)
+        else:
+            # 使用用戶名登入
+            try:
+                user = User.objects.get(username=identifier)
+            except User.DoesNotExist:
+                return Response({"error": "無效的用戶名或密碼"}, status=400)
         
         # 驗證密碼
         if user.check_password(password):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({"token": token.key})
         
-        return Response({"error": "無效的電子郵件或密碼"}, status=400)
+        return Response({"error": "無效的登入資訊"}, status=400)
 
 class ProfileView(APIView):
     """

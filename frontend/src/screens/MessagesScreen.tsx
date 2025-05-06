@@ -1,7 +1,7 @@
 // 私訊頁面，處理用戶聊天對話與即時訊息功能
 // 設計理念: 簡約、高級、直覺的聊天體驗，參考 Thread 與 Instagram 的設計語言
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -38,6 +38,7 @@ const API_BASE_URL = 'http://10.0.2.2:8000/api/private_messages';
 // 定義類型
 interface Chat {
   id: number;
+  clientId?: string;
   participants: Array<{
     id: number;
     username: string;
@@ -97,7 +98,7 @@ const formatMessageTime = (dateString: string): string => {
 };
 
 // 骨架屏組件 - 用於載入中狀態
-const ChatSkeleton = () => {
+const ChatSkeleton = ({ index }: { index: number }) => {
   const opacity = useRef(new Animated.Value(0.5)).current;
   
   useEffect(() => {
@@ -120,7 +121,7 @@ const ChatSkeleton = () => {
   }, []);
   
   return (
-    <Animated.View style={[styles.chatItem, { opacity }]}>
+    <Animated.View style={[styles.chatItem, { opacity }]} key={`skeleton-${index}-${Date.now()}`}>
       <View style={styles.chatAvatarSkeleton} />
       <View style={styles.chatContentSkeleton}>
         <View style={styles.chatNameSkeleton} />
@@ -140,6 +141,11 @@ const MessagesScreen: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  // 记录已挂载状态以避免内存泄漏
+  const isMounted = useRef(true);
+  // 创建不可变的key集合
+  const stableKeys = useRef(new Map<number, string>()).current;
+  
   // 滾動動畫
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({
@@ -148,8 +154,15 @@ const MessagesScreen: React.FC = () => {
     extrapolate: 'clamp',
   });
   
+  // 确保组件卸载时清理
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
   // 模擬聊天數據 - 僅用於展示，正式開發時可刪除
-  const mockChats: Chat[] = [
+  const mockChats: Chat[] = useMemo(() => [
     {
       id: 1001,
       participants: [
@@ -319,7 +332,15 @@ const MessagesScreen: React.FC = () => {
       updated_at: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
       unread_count: 0
     }
-  ];
+  ], [user]);
+  
+  // 生成稳定的键值
+  const getStableKey = useCallback((id: number) => {
+    if (!stableKeys.has(id)) {
+      stableKeys.set(id, `chat-${id}-${Date.now()}`);
+    }
+    return stableKeys.get(id) as string;
+  }, [stableKeys]);
   
   // 獲取聊天室列表
   const fetchChats = useCallback(async (showRefresh = false) => {
@@ -332,32 +353,51 @@ const MessagesScreen: React.FC = () => {
     try {
       // MOCK DATA: 在此使用模擬數據替代 API 請求
       // const data = await getChats(token);
-      setTimeout(() => {
-        setChats(mockChats);
-        setError(null);
-        setLoading(false);
-        setRefreshing(false);
+      
+      // 使用setTimeout模拟网络请求
+      const timeoutId = setTimeout(() => {
+        if (isMounted.current) {
+          // 为每个chat分配一个稳定的key
+          const processedChats = mockChats.map(chat => ({
+            ...chat,
+            clientId: getStableKey(chat.id)
+          }));
+          
+          setChats(processedChats);
+          setError(null);
+          setLoading(false);
+          setRefreshing(false);
+        }
       }, 800); // 模擬網絡延遲
+      
+      // 清理函数
+      return () => clearTimeout(timeoutId);
     } catch (err) {
       console.error('獲取聊天室失敗:', err);
-      setError('無法載入聊天列表，請檢查網路連接並重試');
-      setLoading(false);
-      setRefreshing(false);
+      if (isMounted.current) {
+        setError('無法載入聊天列表，請檢查網路連接並重試');
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
-  }, [token, refreshing]);
+  }, [token, refreshing, mockChats, getStableKey]);
   
-  // 初始載入
+  // 初始載入和清理
   useEffect(() => {
+    const controller = new AbortController();
     fetchChats();
+    return () => {
+      controller.abort();
+    };
   }, [fetchChats]);
   
   // 處理下拉刷新
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(() => {
     fetchChats(true);
-  };
+  }, [fetchChats]);
   
   // 前往特定聊天室
-  const handleChatPress = (chat: Chat) => {
+  const handleChatPress = useCallback((chat: Chat) => {
     if (!user) return;
     
     const otherUser = getOtherParticipant(chat, user.id);
@@ -365,15 +405,26 @@ const MessagesScreen: React.FC = () => {
       chatId: chat.id, 
       otherUser: otherUser
     });
-  };
+  }, [navigation, user]);
   
-  // 渲染聊天項目
-  const renderChatItem = ({ item }: { item: Chat }) => {
+  // 使用memo缓存骨架屏组件，避免重复渲染
+  const skeletonItems = useMemo(() => {
+    const items = [];
+    for (let i = 0; i < 5; i++) {
+      items.push(
+        <ChatSkeleton key={`skeleton-${i}`} index={i} />
+      );
+    }
+    return items;
+  }, []);
+  
+  // 渲染聊天項目 - 使用useCallback优化性能
+  const renderChatItem = useCallback(({ item }: { item: Chat }) => {
     if (!user) return null;
     
     const otherUser = getOtherParticipant(item, user.id);
     const hasUnread = item.unread_count > 0;
-    
+
     return (
       <Pressable
         style={({ pressed }) => [
@@ -446,61 +497,10 @@ const MessagesScreen: React.FC = () => {
         </View>
       </Pressable>
     );
-  };
+  }, [user, handleChatPress]);
   
-  // 新建訊息按鈕
-  const renderFloatingButton = () => (
-    <TouchableOpacity
-      style={styles.floatingButton}
-      activeOpacity={0.9}
-      onPress={() => {
-        // 這裡可導航到選擇聯絡人頁面
-        Alert.alert('新訊息', '選擇聯絡人的功能將在後續版本推出');
-      }}
-    >
-      <Ionicons name="create-outline" size={24} color={COLORS.primary} />
-    </TouchableOpacity>
-  );
-  
-  // 渲染頭部
-  const renderHeader = () => (
-    <Animated.View
-      style={[
-        styles.header,
-        {
-          opacity: headerOpacity,
-          shadowOpacity: headerOpacity.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 0.2],
-          }),
-        },
-      ]}
-    >
-      <View style={styles.headerContent}>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>訊息</Text>
-          <View style={styles.headerSubtitleContainer}>
-            <Text style={styles.headerSubtitle}>
-              {chats.length > 0 ? `${chats.length} 個對話` : ''}
-            </Text>
-          </View>
-        </View>
-        
-        <TouchableOpacity
-          style={styles.headerButton}
-          onPress={() => {
-            // 這裡可導航到搜尋訊息頁面
-            Alert.alert('搜尋訊息', '搜尋訊息功能將在後續版本推出');
-          }}
-        >
-          <Ionicons name="search-outline" size={22} color={COLORS.text} />
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
-  );
-  
-  // 渲染空頁面
-  const renderEmptyList = () => (
+  // 使用memo缓存空列表状态，避免重复渲染
+  const emptyListComponent = useMemo(() => (
     <View style={styles.emptyContainer}>
       <Ionicons name="chatbubble-ellipses-outline" size={60} color={COLORS.subText} />
       <Text style={styles.emptyTitle}>還沒有任何對話</Text>
@@ -518,30 +518,69 @@ const MessagesScreen: React.FC = () => {
         <Text style={styles.emptyButtonText}>發現用戶</Text>
       </TouchableOpacity>
     </View>
-  );
+  ), []);
   
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
       {/* 頭部導航欄 */}
-      {renderHeader()}
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: headerOpacity,
+            shadowOpacity: headerOpacity.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 0.2],
+            }),
+          },
+        ]}
+      >
+        <View style={styles.headerContent}>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>訊息</Text>
+            <View style={styles.headerSubtitleContainer}>
+              <Text style={styles.headerSubtitle}>
+                {chats.length > 0 ? `${chats.length} 個對話` : ''}
+              </Text>
+            </View>
+          </View>
+          
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => {
+              // 這裡可導航到搜尋訊息頁面
+              Alert.alert('搜尋訊息', '搜尋訊息功能將在後續版本推出');
+            }}
+          >
+            <Ionicons name="search-outline" size={22} color={COLORS.text} />
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
       
       {/* 聊天列表 */}
       {loading && !refreshing ? (
-        <View style={styles.loadingContainer}>
-          {[1, 2, 3, 4, 5].map(index => (
-            <ChatSkeleton key={index} />
-          ))}
-        </View>
+        <Animated.View style={styles.loadingContainer}>
+          {skeletonItems}
+        </Animated.View>
       ) : (
         <FlatList
           data={chats}
           renderItem={renderChatItem}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={item => item.clientId || `chat-${item.id}`}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmptyList}
+          ListEmptyComponent={emptyListComponent}
+          initialNumToRender={10}
+          maxToRenderPerBatch={5}
+          windowSize={10} 
+          removeClippedSubviews={Platform.OS === 'android'}
+          getItemLayout={(data, index) => ({
+            length: 84, // 固定高度
+            offset: 84 * index,
+            index,
+          })}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -573,7 +612,16 @@ const MessagesScreen: React.FC = () => {
       )}
       
       {/* 新建訊息浮動按鈕 */}
-      {renderFloatingButton()}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        activeOpacity={0.9}
+        onPress={() => {
+          // 這裡可導航到選擇聯絡人頁面
+          Alert.alert('新訊息', '選擇聯絡人的功能將在後續版本推出');
+        }}
+      >
+        <Ionicons name="create-outline" size={24} color={COLORS.primary} />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };

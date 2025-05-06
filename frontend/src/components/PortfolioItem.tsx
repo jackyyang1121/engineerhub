@@ -1,284 +1,182 @@
-// 作品集項組件，展示單個作品的詳情卡片
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image, 
-  TouchableOpacity, 
-  Linking,
-  Dimensions,
-  Platform 
-} from 'react-native';
-import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../theme';
+// 作品集项目组件，用于显示单个作品集卡片
+// 设计理念：简约、高级、卡片式布局
+
+import React from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { Portfolio } from '../api/portfolios';
-import { Video, ResizeMode } from 'expo-av';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../theme';
+import { getIconProps, FOLDER_ICONS } from '../utils/iconMap';
+
+const { width } = Dimensions.get('window');
+const ITEM_WIDTH = width * 0.85;
+const ITEM_HEIGHT = ITEM_WIDTH * 0.65;
+
+// 定义作品集类型
+export interface Portfolio {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail?: string;
+  demo_url?: string;
+  category: string;
+  technology_used: string[];
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: number;
+    username: string;
+    avatar?: string;
+  };
+}
 
 interface PortfolioItemProps {
   portfolio: Portfolio;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  isOwner?: boolean;
+  isOwner: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-const { width } = Dimensions.get('window');
-const cardWidth = width - SPACING.lg * 2;
-
-type RootStackParamList = {
-  PortfolioDetail: { portfolioId: number };
-};
-
-type NavigationProp = StackNavigationProp<RootStackParamList>;
-
-const PortfolioItem: React.FC<PortfolioItemProps> = ({ 
-  portfolio, 
-  onEdit, 
-  onDelete,
-  isOwner = false
-}) => {
-  const navigation = useNavigation<NavigationProp>();
-  const [videoError, setVideoError] = useState(false);
-  
-  const hasLinks = !!(portfolio.github_url || portfolio.demo_url || portfolio.youtube_url);
-  
-  // 處理鏈接跳轉
-  const handleOpenLink = (url: string | undefined) => {
-    if (!url) return;
-    
-    Linking.canOpenURL(url).then(supported => {
-      if (supported) {
-        Linking.openURL(url);
-      } else {
-        console.log(`無法打開鏈接: ${url}`);
-      }
-    });
-  };
-  
-  // 渲染各種鏈接按鈕
-  const renderLinks = () => {
-    return (
-      <View style={styles.linksContainer}>
-        {portfolio.github_url && (
-          <TouchableOpacity 
-            style={styles.linkButton}
-            onPress={() => handleOpenLink(portfolio.github_url)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="logo-github" size={16} color={COLORS.text} />
-            <Text style={styles.linkText}>GitHub</Text>
-          </TouchableOpacity>
-        )}
-        
-        {portfolio.demo_url && (
-          <TouchableOpacity 
-            style={styles.linkButton}
-            onPress={() => handleOpenLink(portfolio.demo_url)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="globe-outline" size={16} color={COLORS.text} />
-            <Text style={styles.linkText}>Demo</Text>
-          </TouchableOpacity>
-        )}
-        
-        {portfolio.youtube_url && (
-          <TouchableOpacity 
-            style={styles.linkButton}
-            onPress={() => handleOpenLink(portfolio.youtube_url)}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="logo-youtube" size={16} color="#FF0000" />
-            <Text style={styles.linkText}>YouTube</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
+const PortfolioItem: React.FC<PortfolioItemProps> = ({ portfolio, isOwner, onEdit, onDelete }) => {
+  // 获取图标属性
+  const portfolioIconProps = getIconProps(FOLDER_ICONS.portfolio);
 
   return (
-    <View style={styles.container}>
-      {/* 媒體區域：圖片或視頻 */}
-      <TouchableOpacity 
-        style={styles.mediaContainer}
-        activeOpacity={0.9}
-        onPress={() => navigation.navigate('PortfolioDetail', { portfolioId: portfolio.id })}
-      >
-        {portfolio.video_url && !videoError ? (
-          <Video
-            source={{ uri: portfolio.video_url }}
-            style={styles.mediaContent}
-            useNativeControls
-            resizeMode={ResizeMode.COVER}
-            isLooping
-            onError={() => setVideoError(true)}
-          />
-        ) : portfolio.image_url ? (
+    <TouchableOpacity 
+      style={styles.portfolioItem}
+      activeOpacity={0.9}
+    >
+      <View style={styles.thumbnailContainer}>
+        {portfolio.thumbnail ? (
           <Image 
-            source={{ uri: portfolio.image_url }} 
-            style={styles.mediaContent} 
+            source={{ uri: portfolio.thumbnail }} 
+            style={styles.thumbnail}
             resizeMode="cover"
           />
         ) : (
-          <View style={[styles.mediaContent, styles.placeholderMedia]}>
-            <Ionicons name="image-outline" size={48} color={COLORS.subText} />
-          </View>
-        )}
-        
-        {/* 媒體標籤 */}
-        {portfolio.video_url && !videoError && (
-          <View style={styles.mediaTag}>
-            <Ionicons name="videocam" size={12} color={COLORS.background} />
-            <Text style={styles.mediaTagText}>影片</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-      
-      {/* 內容區域 */}
-      <View style={styles.contentContainer}>
-        <Text style={styles.title}>{portfolio.title}</Text>
-        <Text style={styles.description} numberOfLines={2}>{portfolio.description}</Text>
-        
-        {/* 鏈接區域 */}
-        {hasLinks && renderLinks()}
-        
-        {/* 操作按鈕（只有擁有者可見） */}
-        {isOwner && (
-          <View style={styles.actionsContainer}>
-            {onEdit && (
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={onEdit}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="create-outline" size={16} color={COLORS.text} />
-                <Text style={styles.actionText}>編輯</Text>
-              </TouchableOpacity>
-            )}
-            
-            {onDelete && (
-              <TouchableOpacity 
-                style={[styles.actionButton, styles.deleteButton]}
-                onPress={onDelete}
-                activeOpacity={0.7}
-              >
-                <Ionicons name="trash-outline" size={16} color={COLORS.text} />
-                <Text style={styles.actionText}>刪除</Text>
-              </TouchableOpacity>
-            )}
+          <View style={styles.placeholderThumbnail}>
+            <Ionicons 
+              name={portfolioIconProps.name}
+              size={40} 
+              color={COLORS.subText} 
+            />
           </View>
         )}
       </View>
-    </View>
+      
+      <View style={styles.itemContent}>
+        <View style={styles.itemHeader}>
+          <Text style={styles.itemTitle} numberOfLines={1}>{portfolio.title}</Text>
+          <Text style={styles.itemCategory}>{portfolio.category}</Text>
+        </View>
+        
+        <Text style={styles.itemDescription} numberOfLines={2}>
+          {portfolio.description}
+        </Text>
+        
+        <View style={styles.techContainer}>
+          {portfolio.technology_used.slice(0, 3).map((tech, index) => (
+            <View key={`tech-${index}`} style={styles.techTag}>
+              <Text style={styles.techText}>{tech}</Text>
+            </View>
+          ))}
+          {portfolio.technology_used.length > 3 && (
+            <View style={styles.moreTechTag}>
+              <Text style={styles.moreTechText}>+{portfolio.technology_used.length - 3}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: cardWidth,
+  portfolioItem: {
     backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    overflow: 'hidden',
+    borderRadius: RADIUS.lg,
     marginBottom: SPACING.lg,
+    overflow: 'hidden',
     ...SHADOW.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  mediaContainer: {
+  thumbnailContainer: {
+    height: ITEM_HEIGHT,
     width: '100%',
-    height: 220,
-    position: 'relative',
+    backgroundColor: COLORS.elevated,
   },
-  mediaContent: {
+  thumbnail: {
     width: '100%',
     height: '100%',
   },
-  placeholderMedia: {
-    backgroundColor: COLORS.elevated,
+  placeholderThumbnail: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: `${COLORS.accent}15`,
   },
-  mediaTag: {
-    position: 'absolute',
-    top: SPACING.sm,
-    right: SPACING.sm,
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.full,
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xxs,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  mediaTagText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.xs,
-    color: COLORS.background,
-    marginLeft: 3,
-  },
-  contentContainer: {
+  itemContent: {
     padding: SPACING.md,
   },
-  title: {
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
+  },
+  itemTitle: {
     fontFamily: FONTS.bold,
     fontSize: FONTS.size.lg,
     color: COLORS.text,
-    marginBottom: SPACING.xs,
+    flex: 1,
   },
-  description: {
+  itemCategory: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.xs,
+    color: COLORS.accent,
+    backgroundColor: `${COLORS.accent}15`,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+    overflow: 'hidden',
+    marginLeft: SPACING.sm,
+  },
+  itemDescription: {
     fontFamily: FONTS.regular,
-    fontSize: FONTS.size.md,
+    fontSize: FONTS.size.sm,
     color: COLORS.subText,
-    marginBottom: SPACING.md,
-    lineHeight: FONTS.size.md * FONTS.lineHeight.normal,
+    marginBottom: SPACING.sm,
+    lineHeight: 20,
   },
-  linksContainer: {
+  techContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: SPACING.md,
   },
-  linkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  techTag: {
     backgroundColor: COLORS.elevated,
-    borderRadius: RADIUS.full,
-    paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
-    marginRight: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    marginRight: SPACING.xs,
     marginBottom: SPACING.xs,
   },
-  linkText: {
+  techText: {
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.xs,
-    color: COLORS.text,
-    marginLeft: SPACING.xs,
+    color: COLORS.subText,
   },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingTop: SPACING.sm,
-    marginTop: SPACING.xs,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.xs,
+  moreTechTag: {
+    backgroundColor: COLORS.divider,
     paddingHorizontal: SPACING.sm,
-    borderRadius: RADIUS.sm,
-    backgroundColor: COLORS.accent,
-    marginRight: SPACING.sm,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    marginRight: SPACING.xs,
+    marginBottom: SPACING.xs,
   },
-  deleteButton: {
-    backgroundColor: COLORS.error,
-  },
-  actionText: {
+  moreTechText: {
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.xs,
     color: COLORS.text,
-    marginLeft: 3,
-  }
+  },
 });
 
 export default PortfolioItem; 

@@ -65,7 +65,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     """
     登入序列化器，處理用戶登入資料
-    fields: email, password
+    fields: identifier(用戶名或電子郵件), password
     """
-    email = serializers.EmailField()
+    identifier = serializers.CharField(help_text="用戶名或電子郵件")
     password = serializers.CharField()

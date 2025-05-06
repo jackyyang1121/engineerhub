@@ -11,6 +11,7 @@ export type RootStackParamList = {
   Profile: { userId?: number };  // 個人檔案頁面，可選的用戶 ID 參數
   PostDetail: { postId: number };  // 貼文詳情頁面，需要貼文 ID 參數
   Portfolio: undefined;  // 作品集頁面，不需要額外參數
+  PortfolioScreen: undefined;  // 作品集列表页面
   SavedPosts: undefined;  // 已儲存貼文頁面，不需要額外參數
   Settings: undefined;  // 設定頁面，不需要額外參數
   CreatePost: undefined; // 發佈貼文頁面

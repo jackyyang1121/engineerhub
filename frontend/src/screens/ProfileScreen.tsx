@@ -18,7 +18,8 @@ import {
   Animated,
   Dimensions,
   StatusBar,
-  Platform
+  Platform,
+  RefreshControl
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION, LAYOUT } from '../theme';
@@ -48,6 +49,7 @@ const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 // ProfileScreen 組件，負責個人檔案頁面邏輯與畫面
 const ProfileScreen: React.FC = () => {
   const { token } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [portfolios, setPortfolios] = useState<any[]>([]);
@@ -69,8 +71,6 @@ const ProfileScreen: React.FC = () => {
   });
 
   const [avatarSizeValue, setAvatarSizeValue] = useState<number>(88);
-
-  const navigation = useNavigation<NavigationProp>();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -291,7 +291,11 @@ const ProfileScreen: React.FC = () => {
           <Text style={styles.username}>{profile.username}</Text>
           <Text style={styles.bio}>{profile.bio || '這裡是自我介紹...'}</Text>
           
-          <SkillTags skills={profile.skills || []} />
+          <SkillTags 
+            skills={profile.skills || []} 
+            editable={isMe}
+            onEdit={() => setEditModalVisible(true)}
+          />
           
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
@@ -307,6 +311,9 @@ const ProfileScreen: React.FC = () => {
               <Text style={styles.statLabel}>粉絲</Text>
             </View>
           </View>
+          
+          {/* 作品集區塊 */}
+          <PortfolioSection isMe={isMe} navigation={navigation} />
           
           <View style={styles.actionRow}>
             {isMe ? (
@@ -549,6 +556,45 @@ const ProfileScreen: React.FC = () => {
         </View>
       </Modal>
     </SafeAreaView>
+  );
+};
+
+// 作品集区块组件
+const PortfolioSection = ({ isMe, navigation }: { 
+  isMe: boolean; 
+  navigation: any 
+}) => {
+  return (
+    <View style={styles.sectionContainer}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>作品集</Text>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('PortfolioScreen')}
+          style={styles.viewAllButton}
+        >
+          <Text style={styles.viewAllText}>查看全部</Text>
+          <Ionicons name="chevron-forward" size={16} color={COLORS.accent} />
+        </TouchableOpacity>
+      </View>
+      <TouchableOpacity 
+        style={styles.portfolioPreview}
+        onPress={() => navigation.navigate('PortfolioScreen')}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="briefcase-outline" size={28} color={COLORS.accent} />
+        <View style={styles.portfolioPreviewContent}>
+          <Text style={styles.portfolioPreviewTitle}>
+            {isMe ? '查看我的作品集' : '查看TA的作品集'}
+          </Text>
+          <Text style={styles.portfolioPreviewSubtitle}>
+            {isMe 
+              ? '展示你的项目和技能' 
+              : '了解更多专业作品'}
+          </Text>
+        </View>
+        <Ionicons name="arrow-forward" size={20} color={COLORS.subText} />
+      </TouchableOpacity>
+    </View>
   );
 };
 
@@ -908,6 +954,56 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.sm,
     color: COLORS.primary,
+  },
+  portfolioPreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.card,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    ...SHADOW.sm,
+  },
+  portfolioPreviewContent: {
+    flex: 1,
+    marginLeft: SPACING.md,
+    marginRight: SPACING.sm,
+  },
+  portfolioPreviewTitle: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    marginBottom: 2,
+  },
+  portfolioPreviewSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.sm,
+    color: COLORS.subText,
+  },
+  sectionContainer: {
+    width: '100%',
+    marginVertical: SPACING.md,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+    paddingHorizontal: SPACING.md,
+  },
+  sectionTitle: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewAllText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.sm,
+    color: COLORS.accent,
   },
 });
 

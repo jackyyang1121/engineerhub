@@ -301,8 +301,8 @@ const SearchScreen: React.FC = () => {
     if (loading) {
       return (
         <View style={styles.loadersContainer}>
-          {[1, 2, 3].map(i => <SkeletonLoader key={`user-${i}`} type="user" />)}
-          {[1, 2].map(i => <SkeletonLoader key={`post-${i}`} type="post" />)}
+          {[1, 2, 3].map(i => <SkeletonLoader key={`user-skeleton-${i}-${Date.now()}`} type="user" />)}
+          {[1, 2].map(i => <SkeletonLoader key={`post-skeleton-${i}-${Date.now()}`} type="post" />)}
         </View>
       );
     }
@@ -324,7 +324,7 @@ const SearchScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>用戶</Text>
             {users.map(user => (
               <UserResultCard 
-                key={`user-${user.id}`} 
+                key={`user-result-${user.id}`} 
                 user={user} 
                 onPress={() => navigation.navigate('Profile', { userId: user.id })} 
               />
@@ -337,7 +337,7 @@ const SearchScreen: React.FC = () => {
             <Text style={styles.sectionTitle}>貼文</Text>
             {posts.map(post => (
               <PostResultCard 
-                key={`post-${post.id}`} 
+                key={`post-result-${post.id}`} 
                 post={post} 
                 onPress={() => navigation.navigate('PostDetail', { postId: post.id })} 
               />
@@ -369,7 +369,7 @@ const SearchScreen: React.FC = () => {
         
         {recentSearches.map(item => (
           <RecentSearchItem 
-            key={item.id}
+            key={`recent-search-${item.id}`}
             item={item}
             onPress={() => {
               setQuery(item.query);
@@ -396,7 +396,7 @@ const SearchScreen: React.FC = () => {
           }
         ]}
       >
-        <View style={styles.inputContainer}>
+        <Pressable style={styles.inputContainer} onPress={() => { /* 確保整個輸入框都可點擊 */ }}>
           <Ionicons name="search" size={20} color={COLORS.subText} style={styles.searchIcon} />
           <TextInput
             value={query}
@@ -428,7 +428,7 @@ const SearchScreen: React.FC = () => {
               <Ionicons name="close-circle" size={18} color={COLORS.subText} />
             </TouchableOpacity>
           )}
-        </View>
+        </Pressable>
         {query.length > 0 && (
           <TouchableOpacity 
             style={styles.cancelButton} 
@@ -445,28 +445,33 @@ const SearchScreen: React.FC = () => {
         )}
       </Animated.View>
       
-      <Animated.ScrollView
-        style={[styles.scrollView, { opacity: contentOpacity }]}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={COLORS.accent}
-            colors={[COLORS.accent]}
-          />
-        }
-      >
-        {error ? (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-        
-        {showRecentSearches && query.trim() === '' ? renderRecentSearches() : renderSearchResults()}
-      </Animated.ScrollView>
+      <Animated.View style={[styles.scrollView, { opacity: contentOpacity }]}>
+        <FlatList
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.accent}
+              colors={[COLORS.accent]}
+            />
+          }
+          data={[{ key: 'search-content-item' }]} // 單個項目，用於渲染所有內容
+          renderItem={() => (
+            <>
+              {error ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              ) : null}
+              
+              {showRecentSearches && query.trim() === '' ? renderRecentSearches() : renderSearchResults()}
+            </>
+          )}
+        />
+      </Animated.View>
     </SafeAreaView>
   );
 };
@@ -485,11 +490,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    zIndex: 1000,
-    elevation: 5,
-    position: 'relative',
-    paddingTop: SPACING.md + 2,
-    paddingBottom: SPACING.md,
+    zIndex: 10,
+    paddingTop: Platform.OS === 'ios' ? SPACING.md : SPACING.md + 10,
+    paddingBottom: SPACING.md + 5,
+    ...SHADOW.sm,
   },
   inputContainer: {
     flex: 1,
@@ -498,26 +502,33 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderRadius: RADIUS.full,
     paddingHorizontal: SPACING.md,
+    paddingVertical: Platform.OS === 'ios' ? SPACING.sm : SPACING.sm - 2,
     height: 44,
-    ...SHADOW.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
   searchIcon: {
     marginRight: SPACING.xs,
   },
   searchInput: {
     flex: 1,
-    height: '100%',
     color: COLORS.text,
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
-    paddingVertical: 0, // iOS 需要這個來正確定位
+    paddingVertical: Platform.OS === 'ios' ? SPACING.xs : 0,
+    paddingHorizontal: SPACING.xs,
+    height: '100%', // 確保占滿整個高度
+    marginLeft: SPACING.xs,
   },
   clearButton: {
     padding: SPACING.xs,
+    marginLeft: SPACING.xs,
+    borderRadius: RADIUS.full,
   },
   cancelButton: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
     marginLeft: SPACING.sm,
-    padding: SPACING.xs,
   },
   cancelText: {
     color: COLORS.accent,
@@ -526,11 +537,11 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: 2,
   },
   scrollContent: {
     paddingHorizontal: SPACING.md,
-    paddingBottom: SPACING.xxl + LAYOUT.safeBottom,
+    paddingTop: SPACING.md,
+    paddingBottom: LAYOUT.safeBottom + SPACING.xxl,
   },
   loadersContainer: {
     paddingTop: SPACING.md,

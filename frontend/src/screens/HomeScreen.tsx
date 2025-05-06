@@ -184,10 +184,11 @@ const HomeScreen = () => {
       const content = mockContents[Math.floor(Math.random() * mockContents.length)];
       const isLiked = Math.random() > 0.7;
       const isSaved = Math.random() > 0.8;
+      const timestamp = Date.now();
       
       // 創建基本貼文對象
       const post: Post = {
-        id: 10000 + index,
+        id: timestamp - index * 1000 - Math.floor(Math.random() * 1000), // 使用當前時間戳、索引和隨機數組合作為唯一ID
         author,
         content,
         created_at: new Date(Date.now() - Math.floor(Math.random() * 7 * 24 * 60 * 60 * 1000)).toISOString(),
@@ -200,7 +201,7 @@ const HomeScreen = () => {
       // 添加媒體（圖片）
       if (hasMedia) {
         post.media = [{
-          id: 100 + index,
+          id: timestamp + 100 + index,
           file: `https://picsum.photos/500/300?random=${index}`,
           file_type: 'image'
         }];
@@ -245,7 +246,7 @@ public class HelloWorld {
         
         const randomCode = codeTemplates[Math.floor(Math.random() * codeTemplates.length)];
         post.code_blocks = [{
-          id: 200 + index,
+          id: timestamp + 200 + index,
           language: randomCode.language,
           code: randomCode.code
         }];
@@ -430,7 +431,7 @@ public class HelloWorld {
             onSave={handleSave}
           />
         )}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={item => `post-${item.id}-${item.created_at}`}
         contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
