@@ -1,7 +1,10 @@
 # 貼文應用路由檔案，定義 API 端點路徑
 
 from django.urls import path
-from .views import PostListCreateView, PostDetailView, LikeCreateView, CommentCreateView, RepostCreateView, SaveCreateView
+from .views import (
+    PostListCreateView, PostDetailView, LikeCreateView, 
+    CommentCreateView, RepostCreateView, SaveCreateView
+)
 
 urlpatterns = [
     path('posts/', PostListCreateView.as_view(), name='post-list-create'),  # 貼文列表與創建

@@ -1,15 +1,43 @@
 import React, { useState } from 'react';
 import { COLORS, FONTS, RADIUS, SHADOW } from '../theme';
 import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, SafeAreaView, KeyboardAvoidingView, Platform } from 'react-native';
+import { useAuth } from '../context/AuthContext';
+import { createPost } from '../api/posts';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 // 發佈貼文頁面檔案，處理用戶發文、內容輸入、媒體上傳等功能
 
+type RootStackParamList = {
+  Home: { refresh?: boolean };
+  MainApp: { screen: string; params?: any };
+  // 其他頁面可依需求補充
+};
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+
 const CreatePostScreen = () => {
+  const { token } = useAuth();
+  const navigation = useNavigation<NavigationProp>();
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handlePost = () => {
-    // Implement the logic to handle posting the content
+  const handlePost = async () => {
+    if (!content.trim()) {
+      setError('貼文內容不能為空');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      await createPost(token, { content });
+      setContent('');
+      navigation.navigate('MainApp', { screen: 'Home', params: { refresh: true } }); // 導回首頁分頁並帶 refresh 參數
+    } catch (err) {
+      setError('發文失敗，請稍後再試');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,8 +71,8 @@ const CreatePostScreen = () => {
               multiline
               accessibilityLabel="貼文內容輸入框"
             />
-            <TouchableOpacity style={styles.button} onPress={handlePost} activeOpacity={0.85} accessibilityLabel="發佈貼文按鈕">
-              <Text style={styles.buttonText}>發佈</Text>
+            <TouchableOpacity style={styles.button} onPress={handlePost} activeOpacity={0.85} accessibilityLabel="發佈貼文按鈕" disabled={loading}>
+              <Text style={styles.buttonText}>{loading ? '發佈中...' : '發佈'}</Text>
             </TouchableOpacity>
             {error && <Text style={styles.error}>{error}</Text>}
           </View>

@@ -1,4 +1,4 @@
-# apps/private_messages/models.py
+# apps/messages/models.py
 # 私訊模型檔案，定義用戶之間的私訊資料結構
 # 功能：儲存用戶之間的私訊內容
 # 資料來源：User 模型，前端互動觸發
@@ -30,15 +30,11 @@ class Message(models.Model):
     created_at: 發送時間
     is_read: 是否已讀
     """
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)  # 允許為空，方便資料遷移
+    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages')
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Message from {self.sender} in {self.chat}"
-
-    class Meta:
-        verbose_name = '私訊'  # 模型名稱
-        verbose_name_plural = '私訊'  # 複數名稱
+        return f"Message from {self.sender} in {self.chat}" 

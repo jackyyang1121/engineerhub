@@ -10,4 +10,5 @@ urlpatterns = [
     path('api/search/', include('apps.search.urls')),  # 搜尋應用 API 路由，處理搜尋相關請求
     path('api/notifications/', include('apps.notifications.urls')),  # 通知應用 API 路由，處理通知相關請求
     path('api/portfolios/', include('apps.portfolios.urls')),  # 作品集應用 API 路由，處理作品集相關請求
+    path('api/messages/', include('apps.private_messages.urls')),  # 私訊應用 API 路由，處理私訊相關請求
 ]

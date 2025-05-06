@@ -17,6 +17,7 @@ import SavedPostsScreen from '../screens/SavedPostsScreen';  // 導入已儲存�
 import NotificationsScreen from '../screens/NotificationsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import CreatePostScreen from '../screens/CreatePostScreen';
 
 // 建立 Stack 與 Tab 導航器，型別分別對應 RootStackParamList、TabParamList
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -151,6 +152,14 @@ const AppNavigator = () => {
           options={{ 
             title: '設定',
             animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="CreatePost" 
+          component={CreatePostScreen}
+          options={{
+            title: '發佈貼文',
+            animation: 'slide_from_bottom',
           }}
         />
       </Stack.Navigator>

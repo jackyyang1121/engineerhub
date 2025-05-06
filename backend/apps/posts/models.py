@@ -21,6 +21,30 @@ class Post(models.Model):
         verbose_name = '貼文'  # 模型名稱
         verbose_name_plural = '貼文'  # 複數名稱
 
+class PostMedia(models.Model):
+    # 貼文多媒體模型，用於儲存貼文的圖片和影片
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='media', verbose_name='貼文')
+    file = models.FileField(upload_to='post_media/', verbose_name='檔案')  # 支援圖片和影片
+    file_type = models.CharField(max_length=10, choices=[('image', '圖片'), ('video', '影片')], verbose_name='檔案類型')
+    order = models.IntegerField(default=0, verbose_name='排序')  # 用於多媒體排序
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='創建時間')
+
+    class Meta:
+        ordering = ['order', 'created_at']
+        verbose_name = '貼文多媒體'
+        verbose_name_plural = '貼文多媒體'
+
+class CodeBlock(models.Model):
+    # 程式碼區塊模型，用於儲存貼文中的程式碼
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='code_blocks', verbose_name='貼文')
+    code = models.TextField(verbose_name='程式碼')
+    language = models.CharField(max_length=50, verbose_name='程式語言')  # 程式語言，用於語法高亮
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='創建時間')
+
+    class Meta:
+        verbose_name = '程式碼區塊'
+        verbose_name_plural = '程式碼區塊'
+
 class Like(models.Model):
     # 點讚模型
     post = models.ForeignKey(Post, on_delete=models.CASCADE, verbose_name='貼文')  # 關聯的貼文

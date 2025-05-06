@@ -1,4 +1,4 @@
-# apps/private_messages/serializers.py
+# apps/messages/serializers.py
 # 私訊序列化器檔案，將模型資料轉換為 JSON 格式
 # 功能：API 回傳私訊資料給前端，或接收前端資料反序列化
 # 資料來源：models.py 的 Chat 和 Message
@@ -37,4 +37,4 @@ class ChatSerializer(serializers.ModelSerializer):
         last_message = obj.messages.order_by('-created_at').first()
         if last_message:
             return MessageSerializer(last_message).data
-        return None
+        return None 

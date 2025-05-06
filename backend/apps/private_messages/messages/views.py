@@ -1,4 +1,4 @@
-# apps/private_messages/views.py
+# apps/messages/views.py
 # 私訊視圖檔案，定義私訊 API 端點邏輯
 # 功能：處理聊天室列表、訊息列表、發送訊息等請求
 # 資料來源：models.py 的 Chat 和 Message
@@ -42,4 +42,4 @@ class MessageListView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         chat_id = self.kwargs.get('chat_id')
         chat = Chat.objects.get(id=chat_id)
-        serializer.save(sender=self.request.user, chat=chat)
+        serializer.save(sender=self.request.user, chat=chat) 

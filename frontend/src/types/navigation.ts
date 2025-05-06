@@ -13,6 +13,7 @@ export type RootStackParamList = {
   Portfolio: undefined;  // 作品集頁面，不需要額外參數
   SavedPosts: undefined;  // 已儲存貼文頁面，不需要額外參數
   Settings: undefined;  // 設定頁面，不需要額外參數
+  CreatePost: undefined; // 發佈貼文頁面
 };
 
 // 定義底部標籤導航的參數型別
