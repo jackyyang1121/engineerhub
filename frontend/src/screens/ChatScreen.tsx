@@ -32,7 +32,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION, LAYOUT } from '../theme';
 import { getChatMessages, sendMessage, markMessageAsRead, uploadImageMessage } from '../api/messages';
-import { generateMockMessages, generateRandomMessage, addMessageToCache, getMockMessageCache } from './ChatScreenMock';
+import { generateMockMessages, generateRandomMessage, addMessageToCache, getMockMessageCache, clearChatCache, initializeChatCache } from './ChatScreenMock';
 
 const API_BASE_URL = 'http://10.0.2.2:8000/api/private_messages';
 
@@ -123,52 +123,22 @@ const ChatScreen: React.FC = () => {
       setLoading(true);
       console.log('正在獲取聊天室訊息，chatId:', chatId);
       
-      // 嘗試從API獲取訊息
-      try {
-        // 先檢查是否有緩存的消息數據
-        const cachedMessages = getMockMessageCache()[`chat_${chatId}_${otherUser.id}`];
+      // 重新生成模擬數據
+      if (user) {
+        console.log('強制重新生成模擬數據，確保顯示最新訊息');
+        const mockData = generateMockMessages(
+          {
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar
+          },
+          otherUser,
+          chatId,
+          15
+        );
         
-        if (cachedMessages && cachedMessages.length > 0) {
-          console.log(`找到 ${cachedMessages.length} 條緩存消息數據`);
-          setMessages(cachedMessages);
-          setError(null);
-        } else {
-          // 如果沒有緩存，則生成新的模擬數據
-          console.log('沒有找到緩存數據，生成新模擬數據');
-          
-          if (user) {
-            const mockData = generateMockMessages(
-              {
-                id: user.id,
-                username: user.username,
-                avatar: user.avatar
-              },
-              otherUser,
-              chatId,
-              15
-            );
-            
-            setMessages(mockData);
-          }
-        }
-      } catch (apiError) {
-        console.log('API獲取失敗，使用模擬數據:', apiError);
-        
-        // 生成模擬訊息數據
-        if (user) {
-          const mockData = generateMockMessages(
-            {
-              id: user.id,
-              username: user.username,
-              avatar: user.avatar
-            },
-            otherUser,
-            chatId,
-            15
-          );
-          
-          setMessages(mockData);
-        }
+        setMessages(mockData);
+        setError(null);
       }
       
       // 模擬將所有訊息標記為已讀
@@ -187,10 +157,32 @@ const ChatScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [chatId, token, otherUser, user]);
+  }, [chatId, otherUser, user]);
 
   // 初始載入
   useEffect(() => {
+    console.log("=== 進入聊天室 ===");
+    console.log(`聊天ID: ${chatId}, 用戶: ${otherUser.username}`);
+    
+    // 強制清除緩存並重新載入 - 始終確保顯示最新訊息
+    console.log("清除舊緩存數據");
+    clearChatCache(chatId, otherUser.id);
+    
+    // 確保有緩存數據
+    if (user) {
+      console.log("初始化新的聊天緩存");
+      initializeChatCache(
+        {
+          id: user.id,
+          username: user.username,
+          avatar: user.avatar
+        },
+        otherUser,
+        chatId
+      );
+    }
+    
+    console.log("獲取訊息列表");
     fetchMessages();
     
     // 設定導航標題
@@ -377,6 +369,16 @@ const ChatScreen: React.FC = () => {
     const previousMessage = index > 0 ? messages[index - 1] : undefined;
     const showDateSeparator = shouldShowDateSeparator(item, previousMessage);
     
+    console.log(`渲染消息項目 [${index}]:`, {
+      id: item.id,
+      sender: item.sender.username, 
+      senderId: item.sender.id,
+      content: item.content,
+      isCurrentUser,
+      date: formatDateSeparator(item.created_at),
+      time: formatMessageTime(item.created_at)
+    });
+    
     return (
       <>
         {showDateSeparator && (
@@ -530,7 +532,7 @@ const ChatScreen: React.FC = () => {
           <Text style={styles.loadingText}>載入訊息中...</Text>
         </View>
       ) : (
-        <>
+        <View style={{ flex: 1 }}>
           <FlatList
             ref={flatListRef}
             data={messages}
@@ -538,18 +540,35 @@ const ChatScreen: React.FC = () => {
             keyExtractor={item => item.id.toString()}
             contentContainerStyle={styles.messagesContainer}
             showsVerticalScrollIndicator={true}
+            inverted={false}
+            onLayout={() => {
+              if (messages.length > 0) {
+                console.log('消息列表已載入，自動滾動到底部');
+                flatListRef.current?.scrollToEnd({ animated: false });
+              }
+            }}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Ionicons name="chatbubble-outline" size={48} color={COLORS.subText} />
                 <Text style={styles.emptyText}>沒有訊息</Text>
                 <Text style={styles.emptySubtext}>跟 {otherUser.username} 說聲嗨吧！</Text>
+                <TouchableOpacity 
+                  style={styles.retryButton}
+                  onPress={() => {
+                    console.log('重試獲取訊息');
+                    clearChatCache(chatId, otherUser.id);
+                    fetchMessages();
+                  }}
+                >
+                  <Text style={styles.retryButtonText}>重試獲取訊息</Text>
+                </TouchableOpacity>
               </View>
             }
           />
           
           {renderTypingIndicator()}
           {renderInputToolbar()}
-        </>
+        </View>
       )}
       
       {/* 圖片預覽模態框 */}
@@ -832,15 +851,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   retryButton: {
-    backgroundColor: COLORS.error,
+    backgroundColor: COLORS.accent,
     paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.md,
     borderRadius: RADIUS.sm,
-    marginLeft: SPACING.sm,
+    marginTop: SPACING.md,
   },
   retryButtonText: {
     fontFamily: FONTS.bold,
-    fontSize: FONTS.size.xs,
+    fontSize: FONTS.size.sm,
     color: COLORS.background,
   },
 });

@@ -1,5 +1,7 @@
 // 作品集表單組件，用於創建和編輯作品集
-import React, { useState } from 'react';
+// 設計理念：簡約、高級、現代風格的表單，參考Figma和Notion的設計語言
+
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -10,13 +12,20 @@ import {
   Image,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  Animated,
+  Keyboard,
+  Dimensions,
+  KeyboardAvoidingView
 } from 'react-native';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../theme';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Portfolio, CreatePortfolioParams } from '../api/portfolios';
 import * as ImagePicker from 'react-native-image-picker';
 import { Video, ResizeMode } from 'expo-av';
+
+const { width, height } = Dimensions.get('window');
 
 interface PortfolioFormProps {
   onSubmit: (data: CreatePortfolioParams) => Promise<void>;
@@ -44,6 +53,42 @@ const PortfolioForm: React.FC<PortfolioFormProps> = ({
   
   // 表單錯誤
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // 動畫值
+  const formOpacity = useRef(new Animated.Value(0)).current;
+  const formTranslateY = useRef(new Animated.Value(20)).current;
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // 鍵盤監聽
+  useEffect(() => {
+    const keyboardDidShowListener = Keyboard.addListener(
+      'keyboardDidShow',
+      () => setKeyboardVisible(true)
+    );
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => setKeyboardVisible(false)
+    );
+
+    // 初始動畫
+    Animated.parallel([
+      Animated.timing(formOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true
+      }),
+      Animated.timing(formTranslateY, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true
+      })
+    ]).start();
+
+    return () => {
+      keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
+    };
+  }, []);
   
   // 選擇圖片
   const handleSelectImage = () => {
@@ -154,159 +199,231 @@ const PortfolioForm: React.FC<PortfolioFormProps> = ({
   };
   
   return (
-    <ScrollView 
-      style={styles.container}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      {/* 標題輸入 */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>標題 *</Text>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          style={[styles.input, errors.title ? styles.inputError : null]}
-          placeholder="作品標題"
-          placeholderTextColor={COLORS.placeholder}
-        />
-        {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-      </View>
-      
-      {/* 描述輸入 */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>描述 *</Text>
-        <TextInput
-          value={description}
-          onChangeText={setDescription}
-          style={[styles.textArea, errors.description ? styles.inputError : null]}
-          placeholder="詳細描述您的作品..."
-          placeholderTextColor={COLORS.placeholder}
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-        />
-        {errors.description && <Text style={styles.errorText}>{errors.description}</Text>}
-      </View>
-      
-      {/* 圖片上傳 */}
-      <View style={styles.mediaSection}>
-        <Text style={styles.label}>作品圖片</Text>
-        
-        {imagePreview ? (
-          <View style={styles.previewContainer}>
-            <Image source={{ uri: imagePreview }} style={styles.preview} />
-            <TouchableOpacity 
-              style={styles.removeButton}
-              onPress={() => {
-                setImage(null);
-                setImagePreview(undefined);
-              }}
-            >
-              <Ionicons name="close-circle" size={24} color={COLORS.error} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity 
-            style={styles.uploadButton}
-            onPress={handleSelectImage}
-          >
-            <Ionicons name="image-outline" size={24} color={COLORS.accent} />
-            <Text style={styles.uploadText}>選擇圖片</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      
-      {/* 視頻上傳 */}
-      <View style={styles.mediaSection}>
-        <Text style={styles.label}>作品影片</Text>
-        
-        {videoPreview ? (
-          <View style={styles.previewContainer}>
-            <Video
-              source={{ uri: videoPreview }}
-              style={styles.preview}
-              useNativeControls
-              resizeMode={ResizeMode.CONTAIN}
-              isLooping
-            />
-            <TouchableOpacity 
-              style={styles.removeButton}
-              onPress={() => {
-                setVideo(null);
-                setVideoPreview(undefined);
-              }}
-            >
-              <Ionicons name="close-circle" size={24} color={COLORS.error} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity 
-            style={styles.uploadButton}
-            onPress={handleSelectVideo}
-          >
-            <Ionicons name="videocam-outline" size={24} color={COLORS.accent} />
-            <Text style={styles.uploadText}>選擇影片</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      
-      {/* GitHub 連結 */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>GitHub 連結</Text>
-        <TextInput
-          value={githubUrl}
-          onChangeText={setGithubUrl}
-          style={[styles.input, errors.githubUrl ? styles.inputError : null]}
-          placeholder="https://github.com/username/repo"
-          placeholderTextColor={COLORS.placeholder}
-          autoCapitalize="none"
-        />
-        {errors.githubUrl && <Text style={styles.errorText}>{errors.githubUrl}</Text>}
-      </View>
-      
-      {/* Demo 連結 */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>Demo 連結</Text>
-        <TextInput
-          value={demoUrl}
-          onChangeText={setDemoUrl}
-          style={[styles.input, errors.demoUrl ? styles.inputError : null]}
-          placeholder="https://yourdemo.com"
-          placeholderTextColor={COLORS.placeholder}
-          autoCapitalize="none"
-        />
-        {errors.demoUrl && <Text style={styles.errorText}>{errors.demoUrl}</Text>}
-      </View>
-      
-      {/* YouTube 連結 */}
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>YouTube 連結</Text>
-        <TextInput
-          value={youtubeUrl}
-          onChangeText={setYoutubeUrl}
-          style={[styles.input, errors.youtubeUrl ? styles.inputError : null]}
-          placeholder="https://youtube.com/watch?v=..."
-          placeholderTextColor={COLORS.placeholder}
-          autoCapitalize="none"
-        />
-        {errors.youtubeUrl && <Text style={styles.errorText}>{errors.youtubeUrl}</Text>}
-      </View>
-      
-      {/* 提交按鈕 */}
-      <TouchableOpacity 
-        style={styles.submitButton}
-        onPress={handleSubmit}
-        disabled={isLoading}
+      <ScrollView 
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
       >
-        {isLoading ? (
-          <ActivityIndicator size="small" color={COLORS.primary} />
-        ) : (
-          <Text style={styles.submitText}>
-            {initialValues ? '保存修改' : '創建作品集'}
-          </Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+        <Animated.View
+          style={[
+            styles.formContainer,
+            {
+              opacity: formOpacity,
+              transform: [{ translateY: formTranslateY }]
+            }
+          ]}
+        >
+          {/* 圖片上傳區域 - 設計成為頂部圖片區域 */}
+          <View style={styles.mediaHeader}>
+            {imagePreview ? (
+              <View style={styles.headerPreviewContainer}>
+                <Image source={{ uri: imagePreview }} style={styles.headerPreview} />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.5)']}
+                  style={styles.headerGradient}
+                />
+                <TouchableOpacity 
+                  style={styles.headerRemoveButton}
+                  onPress={() => {
+                    setImage(null);
+                    setImagePreview(undefined);
+                  }}
+                >
+                  <Ionicons name="close-circle" size={24} color={COLORS.background} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.changeHeaderButton}
+                  onPress={handleSelectImage}
+                >
+                  <Text style={styles.changeHeaderText}>更換圖片</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.headerUploadButton}
+                onPress={handleSelectImage}
+              >
+                <Ionicons name="image-outline" size={36} color={COLORS.accent} />
+                <Text style={styles.headerUploadText}>點擊上傳封面圖片</Text>
+                <Text style={styles.headerUploadSubText}>
+                  建議尺寸: 1200 x 800 像素
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* 標題輸入 */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>標題 *</Text>
+            <TextInput
+              value={title}
+              onChangeText={setTitle}
+              style={[styles.input, errors.title ? styles.inputError : null]}
+              placeholder="作品標題"
+              placeholderTextColor={COLORS.placeholder}
+            />
+            {errors.title && (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+                <Text style={styles.errorText}>{errors.title}</Text>
+              </View>
+            )}
+          </View>
+          
+          {/* 描述輸入 */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>描述 *</Text>
+            <TextInput
+              value={description}
+              onChangeText={setDescription}
+              style={[styles.textArea, errors.description ? styles.inputError : null]}
+              placeholder="詳細描述您的作品..."
+              placeholderTextColor={COLORS.placeholder}
+              multiline
+              numberOfLines={6}
+              textAlignVertical="top"
+            />
+            {errors.description && (
+              <View style={styles.errorContainer}>
+                <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+                <Text style={styles.errorText}>{errors.description}</Text>
+              </View>
+            )}
+          </View>
+          
+          {/* 連結部分 */}
+          <View style={styles.linksSection}>
+            <Text style={styles.sectionTitle}>作品連結</Text>
+            
+            {/* GitHub 連結 */}
+            <View style={styles.inputContainer}>
+              <View style={styles.labelWithIcon}>
+                <Ionicons name="logo-github" size={18} color={COLORS.text} />
+                <Text style={styles.label}>GitHub 連結</Text>
+              </View>
+              <TextInput
+                value={githubUrl}
+                onChangeText={setGithubUrl}
+                style={[styles.input, errors.githubUrl ? styles.inputError : null]}
+                placeholder="https://github.com/username/repo"
+                placeholderTextColor={COLORS.placeholder}
+                autoCapitalize="none"
+              />
+              {errors.githubUrl && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+                  <Text style={styles.errorText}>{errors.githubUrl}</Text>
+                </View>
+              )}
+            </View>
+            
+            {/* Demo 連結 */}
+            <View style={styles.inputContainer}>
+              <View style={styles.labelWithIcon}>
+                <Ionicons name="globe-outline" size={18} color={COLORS.text} />
+                <Text style={styles.label}>Demo 連結</Text>
+              </View>
+              <TextInput
+                value={demoUrl}
+                onChangeText={setDemoUrl}
+                style={[styles.input, errors.demoUrl ? styles.inputError : null]}
+                placeholder="https://yourdemo.com"
+                placeholderTextColor={COLORS.placeholder}
+                autoCapitalize="none"
+              />
+              {errors.demoUrl && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+                  <Text style={styles.errorText}>{errors.demoUrl}</Text>
+                </View>
+              )}
+            </View>
+            
+            {/* YouTube 連結 */}
+            <View style={styles.inputContainer}>
+              <View style={styles.labelWithIcon}>
+                <Ionicons name="logo-youtube" size={18} color={COLORS.text} />
+                <Text style={styles.label}>YouTube 連結</Text>
+              </View>
+              <TextInput
+                value={youtubeUrl}
+                onChangeText={setYoutubeUrl}
+                style={[styles.input, errors.youtubeUrl ? styles.inputError : null]}
+                placeholder="https://youtube.com/watch?v=..."
+                placeholderTextColor={COLORS.placeholder}
+                autoCapitalize="none"
+              />
+              {errors.youtubeUrl && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={16} color={COLORS.error} />
+                  <Text style={styles.errorText}>{errors.youtubeUrl}</Text>
+                </View>
+              )}
+            </View>
+          </View>
+          
+          {/* 視頻上傳 */}
+          <View style={styles.mediaSection}>
+            <Text style={styles.sectionTitle}>作品影片</Text>
+            
+            {videoPreview ? (
+              <View style={styles.videoPreviewContainer}>
+                <Video
+                  source={{ uri: videoPreview }}
+                  style={styles.videoPreview}
+                  useNativeControls
+                  resizeMode={ResizeMode.CONTAIN}
+                  isLooping
+                />
+                <TouchableOpacity 
+                  style={styles.removeVideoButton}
+                  onPress={() => {
+                    setVideo(null);
+                    setVideoPreview(undefined);
+                  }}
+                >
+                  <Ionicons name="close-circle" size={24} color={COLORS.error} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={styles.videoUploadButton}
+                onPress={handleSelectVideo}
+              >
+                <Ionicons name="videocam-outline" size={28} color={COLORS.accent} />
+                <Text style={styles.videoUploadText}>上傳演示影片</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
+          {/* 提交按鈕 */}
+          <TouchableOpacity 
+            style={[
+              styles.submitButton,
+              isLoading && styles.submitButtonDisabled
+            ]}
+            onPress={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color={COLORS.primary} />
+            ) : (
+              <>
+                <Ionicons name={initialValues ? "save-outline" : "add-circle-outline"} size={20} color={COLORS.primary} />
+                <Text style={styles.submitText}>
+                  {initialValues ? '保存修改' : '創建作品集'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -315,17 +432,102 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: SPACING.md,
     paddingBottom: SPACING.xxl,
+  },
+  formContainer: {
+    paddingBottom: SPACING.xxl,
+  },
+  mediaHeader: {
+    width: '100%',
+    height: 200,
+    marginBottom: SPACING.lg,
+  },
+  headerUploadButton: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: `${COLORS.elevated}80`,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: 'dashed',
+  },
+  headerUploadText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    color: COLORS.accent,
+    marginTop: SPACING.sm,
+  },
+  headerUploadSubText: {
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.xs,
+    color: COLORS.subText,
+    marginTop: SPACING.xs,
+  },
+  headerPreviewContainer: {
+    width: '100%',
+    height: '100%',
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  headerPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: RADIUS.md,
+  },
+  headerGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  headerRemoveButton: {
+    position: 'absolute',
+    top: SPACING.sm,
+    right: SPACING.sm,
+    backgroundColor: `${COLORS.error}40`,
+    borderRadius: RADIUS.full,
+    padding: 4,
+  },
+  changeHeaderButton: {
+    position: 'absolute',
+    bottom: SPACING.sm,
+    right: SPACING.sm,
+    backgroundColor: `${COLORS.accent}90`,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.md,
+    borderRadius: RADIUS.md,
+  },
+  changeHeaderText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.xs,
+    color: COLORS.background,
   },
   inputContainer: {
     marginBottom: SPACING.md,
+    paddingHorizontal: SPACING.md,
+  },
+  sectionTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    marginBottom: SPACING.sm,
+    marginHorizontal: SPACING.md,
+  },
+  labelWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
   },
   label: {
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.sm,
     color: COLORS.text,
     marginBottom: SPACING.xs,
+    marginLeft: SPACING.xs,
   },
   input: {
     backgroundColor: COLORS.elevated,
@@ -349,22 +551,33 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
     color: COLORS.text,
+    textAlignVertical: 'top',
     minHeight: 120,
   },
   inputError: {
     borderColor: COLORS.error,
   },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: SPACING.xs,
+  },
   errorText: {
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.xs,
     color: COLORS.error,
-    marginTop: SPACING.xs,
     marginLeft: SPACING.xs,
   },
-  mediaSection: {
+  linksSection: {
+    marginTop: SPACING.md,
     marginBottom: SPACING.md,
   },
-  uploadButton: {
+  mediaSection: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xl,
+    paddingHorizontal: SPACING.md,
+  },
+  videoUploadButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -373,46 +586,54 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     borderStyle: 'dashed',
-    height: 120,
+    height: 100,
+    marginTop: SPACING.xs,
   },
-  uploadText: {
+  videoUploadText: {
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.md,
     color: COLORS.accent,
-    marginLeft: SPACING.xs,
+    marginLeft: SPACING.sm,
   },
-  previewContainer: {
+  videoPreviewContainer: {
     position: 'relative',
     borderRadius: RADIUS.md,
     overflow: 'hidden',
     height: 200,
+    marginTop: SPACING.xs,
   },
-  preview: {
+  videoPreview: {
     width: '100%',
     height: '100%',
     borderRadius: RADIUS.md,
   },
-  removeButton: {
+  removeVideoButton: {
     position: 'absolute',
     top: SPACING.xs,
     right: SPACING.xs,
     backgroundColor: `${COLORS.background}80`,
     borderRadius: RADIUS.full,
-    padding: 2,
+    padding: 4,
   },
   submitButton: {
+    flexDirection: 'row',
     backgroundColor: COLORS.accent,
     borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SPACING.lg,
+    marginTop: SPACING.xl,
+    marginHorizontal: SPACING.md,
     ...SHADOW.md,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
   },
   submitText: {
     fontFamily: FONTS.bold,
     fontSize: FONTS.size.md,
     color: COLORS.primary,
+    marginLeft: SPACING.xs,
   },
 });
 

@@ -5,39 +5,51 @@
 # 資料流向：被 views.py 查詢、序列化後回傳給前端，或由前端/後端觸發新增
 
 from django.db import models
-from apps.users.models import User
+from django.contrib.auth import get_user_model
 
-class Chat(models.Model):
+User = get_user_model()
+
+class PrivateMessageThread(models.Model):
     """
-    聊天室模型，用於管理兩個用戶之間的聊天
-    participants: 聊天參與者（多對多關係）
-    created_at: 創建時間
-    updated_at: 最後更新時間
+    A thread between users for private messaging
     """
-    participants = models.ManyToManyField(User, related_name='chats')
+    participants = models.ManyToManyField(User, related_name='message_threads')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    
+    class Meta:
+        ordering = ['-updated_at']
+    
     def __str__(self):
-        return f"Chat {self.id}"
+        participant_names = ', '.join([user.username for user in self.participants.all()])
+        return f"Thread between {participant_names}"
+    
+    @property
+    def last_message(self):
+        """Get the last message in this thread"""
+        return self.messages.order_by('-created_at').first()
+    
+    @property
+    def unread_count(self):
+        """Get the number of unread messages in this thread for the request user"""
+        # This is a placeholder, actual implementation would depend on request context
+        return self.messages.filter(is_read=False).count()
 
-class Message(models.Model):
+class PrivateMessage(models.Model):
     """
-    訊息模型，儲存聊天室中的單則訊息
-    chat: 所屬聊天室
-    sender: 發送者
-    content: 訊息內容
-    created_at: 發送時間
-    is_read: 是否已讀
+    A private message within a thread
     """
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)  # 允許為空，方便資料遷移
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    thread = models.ForeignKey(PrivateMessageThread, related_name='messages', on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
-
+    
+    class Meta:
+        ordering = ['created_at']
+    
     def __str__(self):
-        return f"Message from {self.sender} in {self.chat}"
+        return f"Message from {self.sender.username} at {self.created_at.strftime('%Y-%m-%d %H:%M')}"
 
     class Meta:
         verbose_name = '私訊'  # 模型名稱

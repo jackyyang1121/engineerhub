@@ -4,11 +4,20 @@
 # 資料來源：前端發送的 HTTP 請求
 # 資料流向：對應 views.py 的視圖處理
 
-from django.urls import path
-from .views import ChatListView, MessageListView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import PrivateMessageViewSet, PrivateMessageThreadListView, PrivateMessageListView
 
+# 創建路由器並註冊視圖集
+router = DefaultRouter()
+router.register(r'messages', PrivateMessageViewSet)
+
+# 定義 URL 模式
 urlpatterns = [
-    # 聊天室相關路由
-    path('chats/', ChatListView.as_view(), name='chat-list'),
-    path('chats/<int:chat_id>/messages/', MessageListView.as_view(), name='message-list'),
+    # 包含路由器 URL
+    path('', include(router.urls)),
+    
+    # 聊天線程相關路由
+    path('threads/', PrivateMessageThreadListView.as_view(), name='thread-list'),
+    path('threads/<int:thread_id>/messages/', PrivateMessageListView.as_view(), name='thread-messages'),
 ]

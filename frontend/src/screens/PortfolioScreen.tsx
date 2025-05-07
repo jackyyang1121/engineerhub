@@ -28,7 +28,6 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import PortfolioItem from '../components/PortfolioItem';
 import PortfolioForm from '../components/PortfolioForm';
 import { getMyPortfolios, createPortfolio, updatePortfolio, deletePortfolio, Portfolio, generateMockPortfolios, CreatePortfolioParams } from '../api/portfolios';
-import { BlurView } from '@react-native-community/blur';
 
 // 屏幕尺寸
 const { width, height } = Dimensions.get('window');
@@ -71,11 +70,34 @@ const PortfolioScreen: React.FC = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.95)).current;
   const translateY = useRef(new Animated.Value(20)).current;
+  const headerHeight = useRef(new Animated.Value(0)).current;
+
+  // 滾動動畫
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 40, 80],
+    outputRange: [0, 0.8, 1],
+    extrapolate: 'clamp',
+  });
   
   // 模拟数据
   const mockPortfoliosData = useMemo(() => {
     return user ? generateMockPortfolios(5, user.id) : [];
   }, [user?.id]);
+  
+  // 打开编辑模态框
+  const openEditModal = useCallback((portfolio: Portfolio) => {
+    setSelectedPortfolio(portfolio);
+    setIsEditing(true);
+    setModalVisible(true);
+  }, []);
+  
+  // 打开创建模态框
+  const openCreateModal = useCallback(() => {
+    setSelectedPortfolio(null);
+    setIsEditing(false);
+    setModalVisible(true);
+  }, []);
   
   // 初始化动画
   const runEntryAnimation = useCallback(() => {
@@ -94,9 +116,56 @@ const PortfolioScreen: React.FC = () => {
         toValue: 0,
         ...SPRING_CONFIG,
         useNativeDriver: true,
+      }),
+      Animated.timing(headerHeight, {
+        toValue: 100,
+        duration: 500,
+        useNativeDriver: false,
       })
     ]).start();
-  }, [fadeAnim, scaleAnim, translateY]);
+  }, [fadeAnim, scaleAnim, translateY, headerHeight]);
+  
+  // 渲染空状态
+  const renderEmptyState = useCallback(() => (
+    <Animated.View 
+      style={[
+        styles.emptyContainer, 
+        { 
+          opacity: fadeAnim,
+          transform: [
+            { scale: scaleAnim },
+            { translateY: translateY }
+          ] 
+        }
+      ]}
+    >
+      <View style={styles.emptyContent}>
+        <Image 
+          source={{ uri: 'https://i.imgur.com/nVRNAJw.png' }} 
+          style={styles.emptyImage}
+          resizeMode="contain"
+        />
+        
+        <Text style={styles.emptyTitle}>展示您的才華</Text>
+        
+        <Text style={styles.emptySubtitle}>
+          通過創建作品集，向其他開發者展示您的專業技能和成就。
+          上傳作品截圖、添加項目描述和相關連結。
+        </Text>
+        
+        <TouchableOpacity 
+          style={styles.emptyButton}
+          onPress={openCreateModal}
+          activeOpacity={0.8}
+        >
+          <View style={styles.gradientButton}>
+            <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
+            <Text style={styles.emptyButtonText}>創建第一個作品集</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    </Animated.View>
+  ), [fadeAnim, scaleAnim, translateY, openCreateModal]);
   
   // 加载作品集数据
   const fetchPortfolios = useCallback(async (showRefresh = false) => {
@@ -107,7 +176,7 @@ const PortfolioScreen: React.FC = () => {
     }
     
     try {
-      // 输出詳細日誌用於調試
+      // 輸出詳細日誌用於調試
       console.log('正在獲取作品集...', { token });
       console.log('請求URL: /api/portfolios/my-portfolios/');
       
@@ -364,19 +433,30 @@ const PortfolioScreen: React.FC = () => {
     );
   }, []);
   
-  // 打开编辑模态框
-  const openEditModal = useCallback((portfolio: Portfolio) => {
-    setSelectedPortfolio(portfolio);
-    setIsEditing(true);
-    setModalVisible(true);
-  }, []);
-  
-  // 打开创建模态框
-  const openCreateModal = useCallback(() => {
-    setSelectedPortfolio(null);
-    setIsEditing(false);
-    setModalVisible(true);
-  }, []);
+  // 渲染單個作品集項目
+  const renderPortfolioItem = useCallback(({ item, index }: { item: Portfolio; index: number }) => {
+    // 計算條目的動畫延遲
+    const delay = index * 100;
+    
+    return (
+      <Animated.View
+        style={{
+          opacity: fadeAnim,
+          transform: [
+            { scale: scaleAnim },
+            { translateY: translateY }
+          ],
+        }}
+      >
+        <PortfolioItem
+          portfolio={item}
+          isOwner={true}
+          onEdit={() => openEditModal(item)}
+          onDelete={() => handleDeletePortfolio(item)}
+        />
+      </Animated.View>
+    );
+  }, [fadeAnim, scaleAnim, translateY, openEditModal, handleDeletePortfolio]);
   
   // 关闭模态框
   const closeModal = useCallback(() => {
@@ -400,66 +480,6 @@ const PortfolioScreen: React.FC = () => {
     );
   }, [isSubmitting]);
   
-  // 渲染单个项目
-  const renderPortfolioItem = useCallback(({ item, index }: { item: Portfolio; index: number }) => {
-    // 计算条目的动画延迟
-    const delay = index * 100;
-    
-    return (
-      <Animated.View
-        style={{
-          opacity: fadeAnim,
-          transform: [
-            { scale: scaleAnim },
-            { translateY: translateY }
-          ],
-        }}
-      >
-        <PortfolioItem
-          portfolio={item}
-          isOwner={true}
-          onEdit={() => openEditModal(item)}
-          onDelete={() => handleDeletePortfolio(item)}
-        />
-      </Animated.View>
-    );
-  }, [fadeAnim, scaleAnim, translateY, openEditModal, handleDeletePortfolio]);
-  
-  // 渲染空状态
-  const renderEmptyState = useCallback(() => (
-    <Animated.View 
-      style={[
-        styles.emptyContainer, 
-        { 
-          opacity: fadeAnim,
-          transform: [
-            { scale: scaleAnim },
-            { translateY: translateY }
-          ] 
-        }
-      ]}
-    >
-      <Ionicons 
-        name="briefcase-outline" 
-        size={88} 
-        color={COLORS.subText} 
-        style={styles.emptyIcon} 
-      />
-      <Text style={styles.emptyTitle}>沒有作品集</Text>
-      <Text style={styles.emptySubtitle}>
-        展示您的專業作品和項目，讓其他開發者看到您的技能和專長
-      </Text>
-      <TouchableOpacity 
-        style={styles.emptyButton}
-        onPress={openCreateModal}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
-        <Text style={styles.emptyButtonText}>創建第一個作品集</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  ), [fadeAnim, scaleAnim, translateY, openCreateModal]);
-  
   // 渲染加载状态
   if (isLoading && isFirstLoad) {
     return (
@@ -481,6 +501,21 @@ const PortfolioScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
+      {/* 標題欄 */}
+      <Animated.View
+        style={[
+          styles.headerAnimatedContainer,
+          {
+            height: headerHeight,
+            opacity: portfolios.length > 0 ? 1 : 0
+          }
+        ]}
+      >
+        <View style={styles.headerBackground} />
+        <Text style={styles.headerTitle}>我的作品集</Text>
+        <Text style={styles.headerSubtitle}>展示您的專業技能與成就</Text>
+      </Animated.View>
+      
       {/* 页面内容 */}
       <View style={styles.contentContainer}>
         {/* 错误提示 */}
@@ -501,21 +536,18 @@ const PortfolioScreen: React.FC = () => {
           data={portfolios}
           keyExtractor={(item) => `portfolio-${item.id}`}
           renderItem={renderPortfolioItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            portfolios.length === 0 && styles.emptyListContent
+          ]}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmptyState}
           refreshing={refreshing}
           onRefresh={() => fetchPortfolios(true)}
-          ListHeaderComponent={
-            portfolios.length > 0 ? (
-              <View style={styles.headerContainer}>
-                <Text style={styles.headerTitle}>我的作品集</Text>
-                <Text style={styles.headerSubtitle}>
-                  展示您的專業項目和技能作品集
-                </Text>
-              </View>
-            ) : null
-          }
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
         />
       </View>
       
@@ -526,7 +558,9 @@ const PortfolioScreen: React.FC = () => {
           onPress={openCreateModal}
           activeOpacity={0.8}
         >
-          <Ionicons name="add" size={28} color={COLORS.primary} />
+          <View style={styles.fabBackground}>
+            <Ionicons name="add" size={28} color={COLORS.primary} />
+          </View>
         </TouchableOpacity>
       )}
       
@@ -572,9 +606,21 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
-  headerContainer: {
+  headerAnimatedContainer: {
     paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.lg,
+    paddingTop: SPACING.lg,
+    marginBottom: SPACING.sm,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerBackground: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: '100%',
+    backgroundColor: `${COLORS.accent}15`,
+    opacity: 0.5,
   },
   headerTitle: {
     fontFamily: FONTS.bold,
@@ -592,7 +638,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.lg,
     paddingTop: SPACING.sm,
     paddingBottom: SPACING.xxl + LAYOUT.safeBottom,
-    minHeight: '100%',
+  },
+  emptyListContent: {
+    paddingTop: 0,
+    flexGrow: 1,
   },
   errorContainer: {
     backgroundColor: `${COLORS.error}15`,
@@ -636,15 +685,19 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
+    height: height * 0.8,
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  emptyContent: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: SPACING.xl,
-    paddingTop: SPACING.xxl,
-    height: height * 0.7,
+    padding: SPACING.xl,
   },
-  emptyIcon: {
-    marginBottom: SPACING.lg,
-    opacity: 0.6,
+  emptyImage: {
+    width: width * 0.6,
+    height: width * 0.6,
+    marginBottom: SPACING.xl,
   },
   emptyTitle: {
     fontFamily: FONTS.bold,
@@ -662,13 +715,16 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accent,
-    paddingVertical: SPACING.md,
-    paddingHorizontal: SPACING.xl,
+    overflow: 'hidden',
     borderRadius: RADIUS.md,
     ...SHADOW.md,
+  },
+  gradientButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: SPACING.md,
+    paddingHorizontal: SPACING.xl,
+    backgroundColor: COLORS.accent,
   },
   emptyButtonText: {
     fontFamily: FONTS.bold,
@@ -683,10 +739,15 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.accent,
+    overflow: 'hidden',
+    ...SHADOW.lg,
+  },
+  fabBackground: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.lg,
+    backgroundColor: COLORS.accent,
   },
   modalOverlay: {
     flex: 1,

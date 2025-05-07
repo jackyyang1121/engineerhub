@@ -33,6 +33,7 @@ import { useAuth } from '../context/AuthContext';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION, LAYOUT } from '../theme';
 import { getChats } from '../api/messages';  // 引入 API 服務
 import { API_URL } from '../config';  // 引入 API URL
+import { initializeChatCache } from './ChatScreenMock';  // 引入初始化緩存函數
 
 const { width } = Dimensions.get('window');
 const API_BASE_URL = `${API_URL}/api/private_messages`;
@@ -510,6 +511,24 @@ const MessagesScreen: React.FC = () => {
         onPress={() => {
           // 導航到聊天室詳情頁面，確保帶上必要的參數
           console.log("導航到聊天室:", item.id, otherUser);
+          
+          // 在導航前先初始化聊天緩存，確保進入聊天室時有數據顯示
+          if (user) {
+            initializeChatCache(
+              {
+                id: user.id,
+                username: user.username,
+                avatar: user.avatar
+              },
+              {
+                id: otherUser.id,
+                username: otherUser.username,
+                avatar: otherUser.avatar || `https://i.pravatar.cc/150?img=${10 + (item.id % 30)}`
+              },
+              item.id
+            );
+          }
+          
           navigation.navigate('ChatScreen', { 
             chatId: item.id, 
             otherUser: {
