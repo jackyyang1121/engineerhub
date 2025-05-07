@@ -32,6 +32,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION, LAYOUT } from '../theme';
 import { getChatMessages, sendMessage, markMessageAsRead, uploadImageMessage } from '../api/messages';
+import { generateMockMessages, generateRandomMessage, addMessageToCache, getMockMessageCache } from './ChatScreenMock';
 
 const API_BASE_URL = 'http://10.0.2.2:8000/api/private_messages';
 
@@ -120,12 +121,57 @@ const ChatScreen: React.FC = () => {
   const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getChatMessages(token, chatId);
-      setMessages(data); // 已經在 API 中反轉了順序
-      setError(null);
+      console.log('正在獲取聊天室訊息，chatId:', chatId);
+      
+      // 嘗試從API獲取訊息
+      try {
+        // 先檢查是否有緩存的消息數據
+        const cachedMessages = getMockMessageCache()[`chat_${chatId}_${otherUser.id}`];
+        
+        if (cachedMessages && cachedMessages.length > 0) {
+          console.log(`找到 ${cachedMessages.length} 條緩存消息數據`);
+          setMessages(cachedMessages);
+          setError(null);
+        } else {
+          // 如果沒有緩存，則生成新的模擬數據
+          console.log('沒有找到緩存數據，生成新模擬數據');
+          
+          if (user) {
+            const mockData = generateMockMessages(
+              {
+                id: user.id,
+                username: user.username,
+                avatar: user.avatar
+              },
+              otherUser,
+              chatId,
+              15
+            );
+            
+            setMessages(mockData);
+          }
+        }
+      } catch (apiError) {
+        console.log('API獲取失敗，使用模擬數據:', apiError);
+        
+        // 生成模擬訊息數據
+        if (user) {
+          const mockData = generateMockMessages(
+            {
+              id: user.id,
+              username: user.username,
+              avatar: user.avatar
+            },
+            otherUser,
+            chatId,
+            15
+          );
+          
+          setMessages(mockData);
+        }
+      }
       
       // 模擬將所有訊息標記為已讀
-      // 實際應用應該調用後端 API 批量標記已讀
       setTimeout(() => {
         setMessages(prev => 
           prev.map(msg => 
@@ -141,7 +187,7 @@ const ChatScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [chatId, token, otherUser.id]);
+  }, [chatId, token, otherUser, user]);
 
   // 初始載入
   useEffect(() => {
@@ -168,27 +214,16 @@ const ChatScreen: React.FC = () => {
     // 模擬接收新消息 (真實環境應使用WebSocket)
     const intervalId = setInterval(() => {
       if (Math.random() > 0.8) {
-        const randomMessages = [
-          '這是一個範例訊息',
-          '我看過你的作品，很不錯！',
-          '希望能有機會合作',
-          '你熟悉React Native嗎？',
-          '想跟你討論一個專案',
-        ];
+        const newRandomMessage = generateRandomMessage({
+          id: otherUser.id,
+          username: otherUser.username,
+          avatar: otherUser.avatar
+        });
         
-        const newMessage: Message = {
-          id: Date.now(),
-          sender: {
-            id: otherUser.id,
-            username: otherUser.username,
-            avatar: otherUser.avatar,
-          },
-          content: randomMessages[Math.floor(Math.random() * randomMessages.length)],
-          created_at: new Date().toISOString(),
-          is_read: false,
-        };
+        // 將新消息加入緩存
+        addMessageToCache(chatId, otherUser.id, newRandomMessage);
         
-        setMessages(prev => [...prev, newMessage]);
+        setMessages(prev => [...prev, newRandomMessage]);
         
         // 隨機模擬對方輸入中狀態
         if (Math.random() > 0.7) {
@@ -231,18 +266,26 @@ const ChatScreen: React.FC = () => {
     
     setSending(true);
     setMessages(prev => [...prev, newMessage]);
+    
+    // 將新消息加入緩存
+    addMessageToCache(chatId, otherUser.id, newMessage);
+    
     setContent('');
     
     try {
       // 使用 API 服務發送消息
-      const sentMessage = await sendMessage(token, chatId, content.trim());
+      // 在實際應用中，可在這裡與服務器通信
+      // const sentMessage = await sendMessage(token, chatId, content.trim());
       
       // 更新消息列表，用服務器返回的消息替換臨時消息
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === tempId ? sentMessage : msg
-        )
-      );
+      // setMessages(prev => 
+      //   prev.map(msg => 
+      //     msg.id === tempId ? sentMessage : msg
+      //   )
+      // );
+      
+      // 模擬延遲
+      await new Promise(resolve => setTimeout(resolve, 500));
       
     } catch (err) {
       console.error('發送訊息失敗:', err);
@@ -250,6 +293,13 @@ const ChatScreen: React.FC = () => {
       
       // 移除剛剛"假"添加的消息
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
+      
+      // 從緩存中也移除
+      const cacheKey = `chat_${chatId}_${otherUser.id}`;
+      const cachedMessages = getMockMessageCache()[cacheKey];
+      if (cachedMessages) {
+        getMockMessageCache()[cacheKey] = cachedMessages.filter(msg => msg.id !== tempId);
+      }
     } finally {
       setSending(false);
     }
@@ -293,6 +343,9 @@ const ChatScreen: React.FC = () => {
         
         setMessages(prev => [...prev, previewMessage]);
         
+        // 將新圖片消息加入緩存
+        addMessageToCache(chatId, otherUser.id, previewMessage);
+        
         try {
           // 在實際環境中，應調用 API 上傳圖片
           // const uploadedMessage = await uploadImageMessage(token, chatId, selectedImage);
@@ -306,6 +359,13 @@ const ChatScreen: React.FC = () => {
           
           // 移除預覽消息
           setMessages(prev => prev.filter(msg => msg.id !== tempId));
+          
+          // 從緩存中也移除
+          const cacheKey = `chat_${chatId}_${otherUser.id}`;
+          const cachedMessages = getMockMessageCache()[cacheKey];
+          if (cachedMessages) {
+            getMockMessageCache()[cacheKey] = cachedMessages.filter(msg => msg.id !== tempId);
+          }
         }
       }
     });

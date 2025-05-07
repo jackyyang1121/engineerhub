@@ -21,6 +21,7 @@ import {
   RefreshControl,
   Alert,
   Dimensions,
+  Switch,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -31,9 +32,10 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useAuth } from '../context/AuthContext';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION, LAYOUT } from '../theme';
 import { getChats } from '../api/messages';  // 引入 API 服務
+import { API_URL } from '../config';  // 引入 API URL
 
 const { width } = Dimensions.get('window');
-const API_BASE_URL = 'http://10.0.2.2:8000/api/private_messages';
+const API_BASE_URL = `${API_URL}/api/private_messages`;
 
 // 定義類型
 interface Chat {
@@ -73,6 +75,7 @@ type RootStackParamList = {
   MessagesScreen: undefined;
   ChatScreen: { chatId: number; otherUser: { id: number; username: string; avatar?: string } };
   Profile: { userId: number };
+  SearchScreen: undefined;
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
@@ -121,7 +124,10 @@ const ChatSkeleton = ({ index }: { index: number }) => {
   }, []);
   
   return (
-    <Animated.View style={[styles.chatItem, { opacity }]} key={`skeleton-${index}-${Date.now()}`}>
+    <Animated.View 
+      style={[styles.chatItem, { opacity }]} 
+      key={`skeleton-${index}-${Date.now()}`}
+    >
       <View style={styles.chatAvatarSkeleton} />
       <View style={styles.chatContentSkeleton}>
         <View style={styles.chatNameSkeleton} />
@@ -136,30 +142,7 @@ const ChatSkeleton = ({ index }: { index: number }) => {
 const MessagesScreen: React.FC = () => {
   const { token, user } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  // 记录已挂载状态以避免内存泄漏
-  const isMounted = useRef(true);
-  // 创建不可变的key集合
-  const stableKeys = useRef(new Map<number, string>()).current;
-  
-  // 滾動動畫
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 30, 60],
-    outputRange: [0, 0.7, 1],
-    extrapolate: 'clamp',
-  });
-  
-  // 确保组件卸载时清理
-  useEffect(() => {
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
+  const [useMockData, setUseMockData] = useState(true); // 預設使用模擬數據
   
   // 模擬聊天數據 - 僅用於展示，正式開發時可刪除
   const mockChats: Chat[] = useMemo(() => [
@@ -334,6 +317,56 @@ const MessagesScreen: React.FC = () => {
     }
   ], [user]);
   
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 记录已挂载状态以避免内存泄漏
+  const isMounted = useRef(true);
+  // 创建不可变的key集合
+  const stableKeys = useRef(new Map<number, string>()).current;
+  
+  // 滾動動畫
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 30, 60],
+    outputRange: [0, 0.7, 1],
+    extrapolate: 'clamp',
+  });
+  
+  // 确保组件卸载时清理
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+  
+  // 立即在組件掛載時設置模擬數據
+  useEffect(() => {
+    console.log('組件掛載，初始化...');
+    if (useMockData && mockChats.length > 0) {
+      console.log(`發現 ${mockChats.length} 條模擬聊天數據`);
+      const initialChats = mockChats.map(chat => ({
+        ...chat,
+        clientId: `chat-${chat.id}-${Date.now()}`
+      }));
+      setChats(initialChats);
+      setLoading(false);
+      console.log('初始模擬數據已設置完成');
+    }
+  }, [mockChats, useMockData]);
+  
+  // When the component mounts, immediately set up chats and force a refresh
+  useEffect(() => {
+    console.log('初始化聊天界面...');
+    fetchChats();
+    
+    // Debug logs
+    console.log('用戶信息:', user);
+    console.log('模擬數據模式:', useMockData ? '開啟' : '關閉');
+  }, []);
+  
   // 生成稳定的键值
   const getStableKey = useCallback((id: number) => {
     if (!stableKeys.has(id)) {
@@ -344,68 +377,114 @@ const MessagesScreen: React.FC = () => {
   
   // 獲取聊天室列表
   const fetchChats = useCallback(async (showRefresh = false) => {
+    console.log('fetchChats 被調用, useMockData =', useMockData);
+    
     if (showRefresh) {
       setRefreshing(true);
     } else if (!refreshing) {
       setLoading(true);
     }
     
-    try {
-      // MOCK DATA: 在此使用模擬數據替代 API 請求
-      // const data = await getChats(token);
+    // 處理模擬數據
+    const getProcessedMockChats = () => {
+      console.log('生成模擬聊天數據...');
+      return mockChats.map(chat => ({
+        ...chat,
+        clientId: getStableKey(chat.id)
+      }));
+    };
+    
+    // 如果使用模擬數據，直接返回
+    if (useMockData) {
+      console.log('使用模擬數據模式');
+      const processedMockChats = getProcessedMockChats();
+      console.log(`處理了 ${processedMockChats.length} 條模擬對話`);
       
-      // 使用setTimeout模拟网络请求
-      const timeoutId = setTimeout(() => {
-        if (isMounted.current) {
-          // 为每个chat分配一个稳定的key
-          const processedChats = mockChats.map(chat => ({
+      setChats(processedMockChats);
+      setError(null);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    
+    // 如果不使用模擬數據，嘗試 API 請求
+    try {
+      console.log('嘗試從 API 獲取聊天列表...');
+      console.log('API路徑:', `${API_BASE_URL}/chats/`);
+      
+      // 建立請求
+      const response = await axios.get(`${API_BASE_URL}/chats/`, {
+        headers: { 
+          Authorization: `Token ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('API請求成功，狀態碼:', response.status);
+      
+      if (isMounted.current) {
+        if (response.data && Array.isArray(response.data)) {
+          console.log(`收到 ${response.data.length} 條聊天記錄`);
+          const processedChats = response.data.map((chat: any) => ({
             ...chat,
             clientId: getStableKey(chat.id)
           }));
           
           setChats(processedChats);
           setError(null);
-          setLoading(false);
-          setRefreshing(false);
+        } else {
+          console.warn('API返回格式不符預期，使用模擬數據');
+          setChats(getProcessedMockChats());
+          setError('API返回格式不符預期，使用模擬數據');
         }
-      }, 800); // 模擬網絡延遲
+      }
+    } catch (err: any) {
+      console.error('獲取聊天室失敗:', err.message);
       
-      // 清理函数
-      return () => clearTimeout(timeoutId);
-    } catch (err) {
-      console.error('獲取聊天室失敗:', err);
+      // 詳細的錯誤日誌
+      if (err.response) {
+        console.error('錯誤響應狀態:', err.response.status);
+      }
+      
       if (isMounted.current) {
-        setError('無法載入聊天列表，請檢查網路連接並重試');
+        // 使用模擬數據作為後備
+        console.log('因API請求失敗，使用模擬數據');
+        setChats(getProcessedMockChats());
+        setError('無法連接到伺服器，顯示模擬數據');
+      }
+    } finally {
+      if (isMounted.current) {
         setLoading(false);
         setRefreshing(false);
       }
     }
-  }, [token, refreshing, mockChats, getStableKey]);
+  }, [token, refreshing, useMockData, mockChats, getStableKey]);
   
-  // 初始載入和清理
+  // 當模擬數據狀態變化時重新加載
   useEffect(() => {
-    const controller = new AbortController();
+    console.log('模擬數據狀態變化:', useMockData ? '啟用' : '禁用');
     fetchChats();
-    return () => {
-      controller.abort();
-    };
-  }, [fetchChats]);
+    
+    // 顯示切換提示
+    if (isMounted.current) {
+      const message = useMockData 
+        ? '已切換到模擬數據模式' 
+        : '已切換到真實 API 模式';
+      setError(message);
+      
+      // 3秒後清除提示
+      setTimeout(() => {
+        if (isMounted.current) {
+          setError(null);
+        }
+      }, 3000);
+    }
+  }, [useMockData, fetchChats]);
   
   // 處理下拉刷新
   const handleRefresh = useCallback(() => {
     fetchChats(true);
   }, [fetchChats]);
-  
-  // 前往特定聊天室
-  const handleChatPress = useCallback((chat: Chat) => {
-    if (!user) return;
-    
-    const otherUser = getOtherParticipant(chat, user.id);
-    navigation.navigate('ChatScreen', { 
-      chatId: chat.id, 
-      otherUser: otherUser
-    });
-  }, [navigation, user]);
   
   // 使用memo缓存骨架屏组件，避免重复渲染
   const skeletonItems = useMemo(() => {
@@ -420,32 +499,34 @@ const MessagesScreen: React.FC = () => {
   
   // 渲染聊天項目 - 使用useCallback优化性能
   const renderChatItem = useCallback(({ item }: { item: Chat }) => {
-    if (!user) return null;
-    
-    const otherUser = getOtherParticipant(item, user.id);
+    // 確保有用戶且有其他參與者
+    const otherUser = item.participants.find(p => p.id !== (user?.id || 0)) || item.participants[0];
     const hasUnread = item.unread_count > 0;
 
     return (
-      <Pressable
-        style={({ pressed }) => [
-          styles.chatItem,
-          pressed && styles.chatItemPressed
-        ]}
-        onPress={() => handleChatPress(item)}
-        android_ripple={{ color: COLORS.ripple }}
+      <TouchableOpacity
+        style={styles.chatItem}
+        activeOpacity={0.7}
+        onPress={() => {
+          // 導航到聊天室詳情頁面，確保帶上必要的參數
+          console.log("導航到聊天室:", item.id, otherUser);
+          navigation.navigate('ChatScreen', { 
+            chatId: item.id, 
+            otherUser: {
+              id: otherUser.id,
+              username: otherUser.username,
+              avatar: otherUser.avatar || `https://i.pravatar.cc/150?img=${10 + (item.id % 30)}`
+            }
+          });
+        }}
       >
         {/* 頭像 */}
         <View style={styles.chatAvatarContainer}>
           <Image
-            source={
-              otherUser.avatar
-                ? { uri: otherUser.avatar }
-                : { uri: `https://ui-avatars.com/api/?name=${otherUser.username}&background=random&color=fff&size=100` }
-            }
+            source={{ uri: otherUser.avatar || `https://i.pravatar.cc/150?img=${10 + (item.id % 30)}` }}
             style={styles.chatAvatar}
           />
-          {/* 線上狀態指示器 - 這裡可根據後端添加實際在線狀態 */}
-          {Math.random() > 0.7 && (
+          {Math.random() > 0.5 && (
             <View style={styles.onlineIndicator} />
           )}
         </View>
@@ -464,7 +545,7 @@ const MessagesScreen: React.FC = () => {
               ]}
               numberOfLines={1}
             >
-              {item.last_message?.content || '開始對話吧！'}
+              {item.last_message?.content || '開始新對話吧！'}
             </Text>
             
             {hasUnread && (
@@ -495,128 +576,88 @@ const MessagesScreen: React.FC = () => {
             </View>
           )}
         </View>
-      </Pressable>
+      </TouchableOpacity>
     );
-  }, [user, handleChatPress]);
+  }, [user, navigation]);
   
   // 使用memo缓存空列表状态，避免重复渲染
   const emptyListComponent = useMemo(() => (
     <View style={styles.emptyContainer}>
-      <Ionicons name="chatbubble-ellipses-outline" size={60} color={COLORS.subText} />
-      <Text style={styles.emptyTitle}>還沒有任何對話</Text>
+      <View style={styles.emptyIconContainer}>
+        <Ionicons name="chatbubble-ellipses-outline" size={60} color={`${COLORS.accent}50`} />
+      </View>
+      <Text style={styles.emptyTitle}>還沒有對話</Text>
       <Text style={styles.emptySubtitle}>
-        開始與其他用戶交流想法與經驗
+        開始與其他開發者交流想法與經驗
       </Text>
       <TouchableOpacity
         style={styles.emptyButton}
         activeOpacity={0.8}
         onPress={() => {
-          // 可導航到發現用戶頁面
-          Alert.alert('發現用戶', '發現用戶功能將在後續版本推出');
+          // 導航到搜尋頁面或主頁
+          navigation.navigate('SearchScreen');
         }}
       >
         <Text style={styles.emptyButtonText}>發現用戶</Text>
       </TouchableOpacity>
     </View>
-  ), []);
-  
+  ), [navigation]);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
       
       {/* 頭部導航欄 */}
-      <Animated.View
-        style={[
-          styles.header,
-          {
-            opacity: headerOpacity,
-            shadowOpacity: headerOpacity.interpolate({
-              inputRange: [0, 1],
-              outputRange: [0, 0.2],
-            }),
-          },
-        ]}
-      >
+      <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>訊息</Text>
-            <View style={styles.headerSubtitleContainer}>
-              <Text style={styles.headerSubtitle}>
-                {chats.length > 0 ? `${chats.length} 個對話` : ''}
-              </Text>
-            </View>
           </View>
           
           <TouchableOpacity
             style={styles.headerButton}
             onPress={() => {
-              // 這裡可導航到搜尋訊息頁面
               Alert.alert('搜尋訊息', '搜尋訊息功能將在後續版本推出');
             }}
           >
             <Ionicons name="search-outline" size={22} color={COLORS.text} />
           </TouchableOpacity>
         </View>
-      </Animated.View>
+      </View>
       
-      {/* 聊天列表 */}
-      {loading && !refreshing ? (
-        <Animated.View style={styles.loadingContainer}>
-          {skeletonItems}
-        </Animated.View>
-      ) : (
-        <FlatList
-          data={chats}
-          renderItem={renderChatItem}
-          keyExtractor={item => item.clientId || `chat-${item.id}`}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={emptyListComponent}
-          initialNumToRender={10}
-          maxToRenderPerBatch={5}
-          windowSize={10} 
-          removeClippedSubviews={Platform.OS === 'android'}
-          getItemLayout={(data, index) => ({
-            length: 84, // 固定高度
-            offset: 84 * index,
-            index,
-          })}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={COLORS.accent}
-              colors={[COLORS.accent]}
-              progressBackgroundColor={COLORS.card}
-            />
-          }
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
-        />
-      )}
-      
-      {/* 錯誤提示 */}
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity
-            style={styles.retryButton}
-            onPress={() => fetchChats()}
-          >
-            <Text style={styles.retryButtonText}>重試</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {/* 主要內容區 */}
+      <View style={styles.mainContainer}>
+        {/* 聊天列表 */}
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            {skeletonItems}
+          </View>
+        ) : (
+          <FlatList
+            data={chats}
+            renderItem={renderChatItem}
+            keyExtractor={(item) => `chat-${item.id}`}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={emptyListComponent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={COLORS.accent}
+                colors={[COLORS.accent]}
+                progressBackgroundColor={COLORS.card}
+              />
+            }
+          />
+        )}
+      </View>
       
       {/* 新建訊息浮動按鈕 */}
       <TouchableOpacity
         style={styles.floatingButton}
-        activeOpacity={0.9}
+        activeOpacity={0.7}
         onPress={() => {
-          // 這裡可導航到選擇聯絡人頁面
           Alert.alert('新訊息', '選擇聯絡人的功能將在後續版本推出');
         }}
       >
@@ -633,15 +674,10 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
     backgroundColor: COLORS.background,
-    zIndex: 100,
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
     borderBottomColor: COLORS.divider,
-    ...SHADOW.sm,
+    paddingBottom: SPACING.sm,
   },
   headerContent: {
     height: LAYOUT.headerHeight,
@@ -659,16 +695,6 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     letterSpacing: -0.5,
   },
-  headerSubtitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerSubtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: FONTS.size.xs,
-    color: COLORS.subText,
-    marginTop: 2,
-  },
   headerButton: {
     width: 40,
     height: 40,
@@ -678,13 +704,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...SHADOW.sm,
   },
+  mainContainer: {
+    flex: 1,
+  },
   loadingContainer: {
     flex: 1,
-    paddingTop: LAYOUT.headerHeight + SPACING.md,
+    paddingTop: SPACING.md,
     paddingHorizontal: SPACING.lg,
   },
   listContent: {
-    paddingTop: LAYOUT.headerHeight + SPACING.md,
+    paddingTop: SPACING.sm,
     paddingHorizontal: SPACING.lg,
     paddingBottom: SPACING.xxl,
   },
@@ -697,9 +726,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     ...SHADOW.sm,
   },
-  chatItemPressed: {
-    backgroundColor: COLORS.elevated,
-  },
   chatAvatarContainer: {
     position: 'relative',
     marginRight: SPACING.md,
@@ -709,6 +735,8 @@ const styles = StyleSheet.create({
     height: 56,
     borderRadius: RADIUS.full,
     backgroundColor: COLORS.elevated,
+    borderWidth: 1.5,
+    borderColor: `${COLORS.accent}30`,
   },
   onlineIndicator: {
     position: 'absolute',
@@ -793,11 +821,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.xl,
     marginTop: SPACING.xxl,
   },
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: `${COLORS.elevated}80`,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.lg,
+    ...SHADOW.sm,
+  },
   emptyTitle: {
     fontFamily: FONTS.bold,
     fontSize: FONTS.size.lg,
     color: COLORS.text,
-    marginTop: SPACING.lg,
     marginBottom: SPACING.xs,
   },
   emptySubtitle: {
@@ -805,12 +842,12 @@ const styles = StyleSheet.create({
     fontSize: FONTS.size.md,
     color: COLORS.subText,
     textAlign: 'center',
-    marginBottom: SPACING.lg,
+    marginBottom: SPACING.xl,
   },
   emptyButton: {
     backgroundColor: COLORS.accent,
     paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.lg,
+    paddingHorizontal: SPACING.xl,
     borderRadius: RADIUS.md,
     ...SHADOW.md,
   },
@@ -819,38 +856,6 @@ const styles = StyleSheet.create({
     fontSize: FONTS.size.md,
     color: COLORS.primary,
   },
-  errorContainer: {
-    position: 'absolute',
-    bottom: SPACING.xxl,
-    left: SPACING.lg,
-    right: SPACING.lg,
-    backgroundColor: `${COLORS.error}22`,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    ...SHADOW.md,
-  },
-  errorText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.sm,
-    color: COLORS.error,
-    flex: 1,
-  },
-  retryButton: {
-    backgroundColor: COLORS.error,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.sm,
-    marginLeft: SPACING.sm,
-  },
-  retryButtonText: {
-    fontFamily: FONTS.bold,
-    fontSize: FONTS.size.xs,
-    color: COLORS.background,
-  },
-  // 骨架屏樣式
   chatAvatarSkeleton: {
     width: 56,
     height: 56,

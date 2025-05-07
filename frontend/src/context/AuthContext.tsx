@@ -189,25 +189,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // 如果配置為跳過登入，直接設置模擬資料
         if (CONFIG.DEV.SKIP_LOGIN) {
+          console.log('配置為跳過登入，使用模擬帳號');
           setTokenState('mock-token-auto');
           setUserState(MOCK_USER);
           setIsMockUser(true);
           setIsLoading(false);
           return;
+        } else {
+          console.log('未跳過登入，嘗試從存儲加載認證資料');
         }
         
         // 從存儲載入 token
         const storedToken = await AsyncStorage.getItem(TOKEN_STORAGE_KEY);
         if (storedToken) {
+          console.log('存儲中找到令牌');
           setTokenState(storedToken);
           setIsMockUser(storedToken.startsWith('mock-token'));
           
           // 從存儲載入用戶資料
           const storedUser = await AsyncStorage.getItem(USER_STORAGE_KEY);
           if (storedUser) {
+            console.log('存儲中找到用戶資料');
             setUserState(JSON.parse(storedUser));
           } else if (storedToken.startsWith('mock-token')) {
             // 如果是模擬 token 但沒有用戶資料，設置模擬用戶
+            console.log('使用模擬用戶資料');
             setUserState(MOCK_USER);
           }
           
@@ -224,6 +230,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               await logout();
             }
           }
+        } else {
+          console.log('未找到存儲的令牌，需要登入');
         }
       } catch (error) {
         console.error('載入認證數據失敗:', error);

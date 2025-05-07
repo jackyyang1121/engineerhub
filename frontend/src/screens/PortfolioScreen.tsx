@@ -107,20 +107,25 @@ const PortfolioScreen: React.FC = () => {
     }
     
     try {
-      // 嘗試加載數據
-      console.log('正在獲取作品集...');
+      // 输出詳細日誌用於調試
+      console.log('正在獲取作品集...', { token });
+      console.log('請求URL: /api/portfolios/my-portfolios/');
       
       // 實際API調用
       const data = await getMyPortfolios(token);
-      console.log('API返回數據:', data);
+      console.log('API返回數據類型:', typeof data);
+      console.log('API返回數據結構:', Object.keys(data));
+      console.log('API返回完整數據:', JSON.stringify(data, null, 2));
       
       // 檢查響應類型並正確設置數據
       if (data && Array.isArray(data.results)) {
+        console.log('使用 data.results 陣列, 長度:', data.results.length);
         setPortfolios(data.results);
       } else if (data && Array.isArray(data)) {
+        console.log('使用 data 陣列, 長度:', data.length);
         setPortfolios(data);
       } else {
-        console.warn('API返回格式意外:', data);
+        console.warn('API返回格式意外，使用模擬數據:', data);
         setPortfolios(mockPortfoliosData);
       }
       
@@ -131,8 +136,10 @@ const PortfolioScreen: React.FC = () => {
         setIsFirstLoad(false);
       }
       
-    } catch (err) {
-      console.error('Error fetching portfolios:', err);
+    } catch (err: any) {
+      console.error('獲取作品集錯誤:', err);
+      console.error('錯誤詳情:', err.response?.data);
+      console.error('錯誤狀態:', err.response?.status);
       setError('無法載入作品集，請檢查網絡連接並重試');
       
       // 使用模擬資料作為後備

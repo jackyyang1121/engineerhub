@@ -316,8 +316,8 @@ const SearchScreen: React.FC = () => {
         </View>
       );
     }
-    
-    return (
+
+  return (
       <>
         {users.length > 0 && (
           <View style={styles.resultSection}>
@@ -378,10 +378,10 @@ const SearchScreen: React.FC = () => {
             onDelete={() => handleDeleteRecentSearch(item.id)}
           />
         ))}
-      </View>
-    );
-  };
-  
+    </View>
+  );
+};
+
   // 畫面渲染
   return (
     <SafeAreaView style={styles.safeArea}>

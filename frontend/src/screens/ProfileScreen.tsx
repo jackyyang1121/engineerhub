@@ -32,28 +32,329 @@ import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BlurView } from '@react-native-community/blur';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
+import LinearGradient from 'react-native-linear-gradient';
 
 // 定義導航參數類型
 type RootStackParamList = {
   Profile: { userId: number };
   Portfolio: undefined;
+  PostDetail: { postId: number };
 };
 
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 const HEADER_MAX_HEIGHT = 280;
 const HEADER_MIN_HEIGHT = LAYOUT.headerHeight;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
+// 作品集區塊組件，用於顯示在個人檔案頁面中
+const ProfilePortfolioSection = ({ portfolios, isMe, navigation }: { 
+  portfolios: any[];
+  isMe: boolean;
+  navigation: any;
+}) => {
+  // 如果沒有作品集，顯示空狀態
+  if (portfolios.length === 0) {
+    return (
+      <View style={portfolioStyles.emptyContainer}>
+        <Ionicons name="briefcase-outline" size={32} color={COLORS.subText} />
+        <Text style={portfolioStyles.emptyText}>尚無作品集</Text>
+        {isMe && (
+          <TouchableOpacity
+            style={portfolioStyles.addButton}
+            onPress={() => navigation.navigate('Portfolio')}
+          >
+            <Ionicons name="add-circle-outline" size={16} color={COLORS.primary} />
+            <Text style={portfolioStyles.addButtonText}>添加作品集</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  }
+
+  // 顯示作品集列表
+  return (
+    <View style={portfolioStyles.container}>
+      <View style={portfolioStyles.header}>
+        <Text style={portfolioStyles.title}>作品集</Text>
+        {isMe && (
+          <TouchableOpacity 
+            style={portfolioStyles.manageButton}
+            onPress={() => navigation.navigate('Portfolio')}
+          >
+            <Text style={portfolioStyles.manageText}>管理</Text>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.accent} />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* 作品集橫向滾動列表 */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={portfolioStyles.scrollContent}
+      >
+        {portfolios.map((portfolio, index) => (
+          <TouchableOpacity 
+            key={`portfolio-${portfolio.id}`}
+            style={portfolioStyles.card}
+            activeOpacity={0.8}
+            onPress={() => {
+              // 可以導航到作品集詳情頁面
+              Alert.alert('作品集', `${portfolio.title}\n\n${portfolio.description}`);
+            }}
+          >
+            {/* 作品集縮圖或背景 */}
+            <View style={portfolioStyles.thumbnailContainer}>
+              <Image
+                source={{ uri: portfolio.thumbnail || `https://picsum.photos/seed/portfolio${index}/800/600` }}
+                style={portfolioStyles.thumbnail}
+              />
+              <LinearGradient
+                colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.7)']}
+                style={portfolioStyles.gradient}
+              />
+            </View>
+
+            {/* 作品集信息 */}
+            <View style={portfolioStyles.cardContent}>
+              <Text style={portfolioStyles.cardTitle} numberOfLines={1}>
+                {portfolio.title}
+              </Text>
+              
+              {/* 技術標籤 */}
+              {portfolio.technology_used && portfolio.technology_used.length > 0 && (
+                <View style={portfolioStyles.techContainer}>
+                  {portfolio.technology_used.slice(0, 3).map((tech: string, i: number) => (
+                    <View key={`tech-${i}`} style={portfolioStyles.techBadge}>
+                      <Text style={portfolioStyles.techText}>{tech}</Text>
+                    </View>
+                  ))}
+                  {portfolio.technology_used.length > 3 && (
+                    <View style={portfolioStyles.techBadge}>
+                      <Text style={portfolioStyles.techText}>+{portfolio.technology_used.length - 3}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+              
+              {/* 鏈接圖標 */}
+              <View style={portfolioStyles.linksContainer}>
+                {portfolio.github_url && (
+                  <TouchableOpacity
+                    style={portfolioStyles.linkIcon}
+                    onPress={() => Linking.openURL(portfolio.github_url)}
+                  >
+                    <Ionicons name="logo-github" size={20} color={COLORS.text} />
+                  </TouchableOpacity>
+                )}
+                
+                {portfolio.demo_url && (
+                  <TouchableOpacity
+                    style={portfolioStyles.linkIcon}
+                    onPress={() => Linking.openURL(portfolio.demo_url)}
+                  >
+                    <Ionicons name="globe-outline" size={20} color={COLORS.text} />
+                  </TouchableOpacity>
+                )}
+                
+                {portfolio.youtube_url && (
+                  <TouchableOpacity
+                    style={portfolioStyles.linkIcon}
+                    onPress={() => Linking.openURL(portfolio.youtube_url)}
+                  >
+                    <Ionicons name="logo-youtube" size={20} color={COLORS.error} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+        
+        {/* 顯示更多按鈕 */}
+        {portfolios.length > 3 && isMe && (
+          <TouchableOpacity
+            style={portfolioStyles.viewAllCard}
+            onPress={() => navigation.navigate('Portfolio')}
+          >
+            <Ionicons name="grid-outline" size={24} color={COLORS.accent} />
+            <Text style={portfolioStyles.viewAllText}>查看全部</Text>
+            <Text style={portfolioStyles.viewAllCount}>
+              {portfolios.length} 個作品集
+            </Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+const portfolioStyles = StyleSheet.create({
+  container: {
+    marginVertical: SPACING.lg,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.lg,
+    marginBottom: SPACING.md,
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.lg,
+    color: COLORS.text,
+  },
+  manageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  manageText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.sm,
+    color: COLORS.accent,
+    marginRight: 2,
+  },
+  scrollContent: {
+    paddingHorizontal: SPACING.lg,
+    paddingBottom: SPACING.md,
+  },
+  card: {
+    width: 240,
+    height: 180,
+    marginRight: SPACING.md,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden',
+    backgroundColor: COLORS.card,
+    ...SHADOW.md,
+  },
+  thumbnailContainer: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  thumbnail: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  gradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 100,
+  },
+  cardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: SPACING.md,
+  },
+  cardTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.md,
+    color: '#FFFFFF',
+    marginBottom: SPACING.xs,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  techContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  techBadge: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full,
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  techText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.xxs,
+    color: '#FFFFFF',
+  },
+  linksContainer: {
+    flexDirection: 'row',
+    marginTop: SPACING.xs,
+  },
+  linkIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: RADIUS.full,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: SPACING.xs,
+  },
+  viewAllCard: {
+    width: 160,
+    height: 180,
+    marginRight: SPACING.md,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOW.md,
+  },
+  viewAllText: {
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    marginTop: SPACING.sm,
+  },
+  viewAllCount: {
+    fontFamily: FONTS.regular,
+    fontSize: FONTS.size.sm,
+    color: COLORS.subText,
+    marginTop: SPACING.xs,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: SPACING.lg,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.lg,
+    backgroundColor: COLORS.card,
+    marginHorizontal: SPACING.lg,
+    marginVertical: SPACING.lg,
+  },
+  emptyText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    color: COLORS.subText,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.accent,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.md,
+  },
+  addButtonText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.sm,
+    color: COLORS.primary,
+    marginLeft: 4,
+  },
+});
+
 // ProfileScreen 組件，負責個人檔案頁面邏輯與畫面
 const ProfileScreen: React.FC = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigation = useNavigation<NavigationProp>();
   const [profile, setProfile] = useState<any>(null);
   const [posts, setPosts] = useState<any[]>([]);
   const [portfolios, setPortfolios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isMe, setIsMe] = useState(true); // 假設目前只看自己
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editBio, setEditBio] = useState('');
@@ -72,38 +373,98 @@ const ProfileScreen: React.FC = () => {
 
   const [avatarSizeValue, setAvatarSizeValue] = useState<number>(88);
 
+  // 加載個人資料和貼文
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchAllData = async () => {
       setIsLoading(true);
-      // TODO: 換成你的 API 路徑
-      const res = await fetch('http://10.0.2.2:8000/api/users/profile/', {
-        headers: { Authorization: `Token ${token}` },
-      });
-      const data = await res.json();
-      setProfile(data);
-      setIsLoading(false);
+      
+      try {
+        // 獲取個人資料
+        console.log('獲取個人資料...');
+        const profileRes = await fetch('http://10.0.2.2:8000/api/users/profile/', {
+          headers: { Authorization: `Token ${token}` },
+        });
+        
+        if (!profileRes.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+        
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+        
+        // 獲取用戶貼文
+        console.log('獲取用戶貼文...');
+        const postsRes = await fetch('http://10.0.2.2:8000/api/posts/posts/?user=current', {
+          headers: { Authorization: `Token ${token}` },
+        });
+        
+        if (!postsRes.ok) {
+          throw new Error('Failed to fetch posts');
+        }
+        
+        const postsData = await postsRes.json();
+        setPosts(postsData.results || postsData);
+        
+        // 獲取作品集
+        console.log('獲取作品集...');
+        try {
+          // 嘗試兩個可能的API端點
+          let portfoliosData;
+          try {
+            const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/my-portfolios/', {
+              headers: { Authorization: `Token ${token}` },
+            });
+            
+            if (portfoliosRes.ok) {
+              portfoliosData = await portfoliosRes.json();
+            } else {
+              throw new Error('First endpoint failed');
+            }
+          } catch (e) {
+            // 嘗試備用端點
+            console.log('嘗試備用作品集API端點...');
+            const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/portfolios/', {
+              headers: { Authorization: `Token ${token}` },
+            });
+            
+            if (!portfoliosRes.ok) {
+              throw new Error('Both portfolio endpoints failed');
+            }
+            
+            portfoliosData = await portfoliosRes.json();
+          }
+          
+          setPortfolios(portfoliosData.results || portfoliosData || []);
+        } catch (e) {
+          console.error('獲取作品集失敗:', e);
+          setPortfolios([]);
+        }
+      } catch (error) {
+        console.error('獲取資料失敗:', error);
+        // 使用模擬數據作為後備
+        if (!profile) {
+          setProfile({
+            id: 1,
+            username: user?.username || '用戶',
+            bio: '這是一個簡短的自我介紹，描述您的專業背景和興趣。',
+            skills: ['React Native', 'TypeScript', 'UI Design'],
+            following_count: 123,
+            followers_count: 456,
+            avatar: user?.avatar || 'https://i.pravatar.cc/300'
+          });
+        }
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
+      }
     };
-    const fetchPosts = async () => {
-      const res = await fetch('http://10.0.2.2:8000/api/posts/posts/?user=current', {
-        headers: { Authorization: `Token ${token}` },
-      });
-      const data = await res.json();
-      setPosts(data.results || data);
-    };
-    const fetchPortfolios = async () => {
-      const res = await fetch('http://10.0.2.2:8000/api/portfolios/', {
-        headers: { Authorization: `Token ${token}` },
-      });
-      const data = await res.json();
-      setPortfolios(data.results || data);
-    };
+    
     if (token) {
-      fetchProfile();
-      fetchPosts();
-      fetchPortfolios();
+      fetchAllData();
     }
-  }, [token]);
+  }, [token, user]);
 
+  // 更新編輯表單的值
   useEffect(() => {
     if (profile) {
       setEditBio(profile.bio || '');
@@ -112,6 +473,7 @@ const ProfileScreen: React.FC = () => {
     }
   }, [profile]);
 
+  // 監聽頭像大小變化
   useEffect(() => {
     const listenerId = avatarSize.addListener(({ value }) => {
       setAvatarSizeValue(value);
@@ -121,19 +483,75 @@ const ProfileScreen: React.FC = () => {
     };
   }, [avatarSize]);
 
+  // 下拉刷新
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // 重新加載所有數據
+    try {
+      // 獲取個人資料
+      const profileRes = await fetch('http://10.0.2.2:8000/api/users/profile/', {
+        headers: { Authorization: `Token ${token}` },
+      });
+      
+      if (!profileRes.ok) {
+        throw new Error('Failed to fetch profile');
+      }
+      
+      const profileData = await profileRes.json();
+      setProfile(profileData);
+      
+      // 獲取用戶貼文
+      const postsRes = await fetch('http://10.0.2.2:8000/api/posts/posts/?user=current', {
+        headers: { Authorization: `Token ${token}` },
+      });
+      
+      if (!postsRes.ok) {
+        throw new Error('Failed to fetch posts');
+      }
+      
+      const postsData = await postsRes.json();
+      setPosts(postsData.results || postsData);
+      
+      // 嘗試獲取作品集
+      try {
+        const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/my-portfolios/', {
+          headers: { Authorization: `Token ${token}` },
+        });
+        
+        if (portfoliosRes.ok) {
+          const portfoliosData = await portfoliosRes.json();
+          setPortfolios(portfoliosData.results || portfoliosData || []);
+        }
+      } catch (e) {
+        console.error('刷新作品集失敗:', e);
+      }
+    } catch (error) {
+      console.error('刷新資料失敗:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   // 刪除貼文功能
   const handleDeletePost = async (postId: number) => {
     Alert.alert('確定要刪除這則貼文嗎？', '', [
       { text: '取消', style: 'cancel' },
       { text: '刪除', style: 'destructive', onPress: async () => {
         try {
-          await fetch(`http://10.0.2.2:8000/api/posts/posts/${postId}/`, {
+          const response = await fetch(`http://10.0.2.2:8000/api/posts/posts/${postId}/`, {
             method: 'DELETE',
             headers: { Authorization: `Token ${token}` },
           });
+          
+          if (!response.ok) {
+            throw new Error('刪除失敗');
+          }
+          
+          // 更新貼文列表
           setPosts(posts.filter(p => p.id !== postId));
         } catch (err) {
-          Alert.alert('刪除失敗');
+          console.error('刪除貼文錯誤:', err);
+          Alert.alert('刪除失敗', '無法刪除貼文，請稍後再試');
         }
       }}
     ]);
@@ -143,7 +561,7 @@ const ProfileScreen: React.FC = () => {
   const handleEditProfile = async () => {
     setEditLoading(true);
     try {
-      const res = await fetch('http://10.0.2.2:8000/api/users/profile/', {
+      const response = await fetch('http://10.0.2.2:8000/api/users/profile/', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -158,15 +576,17 @@ const ProfileScreen: React.FC = () => {
           avatar: editAvatar,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
-        setEditModalVisible(false);
-      } else {
-        Alert.alert('更新失敗');
+      
+      if (!response.ok) {
+        throw new Error('更新失敗');
       }
+      
+      const data = await response.json();
+      setProfile(data);
+      setEditModalVisible(false);
     } catch (err) {
-      Alert.alert('更新失敗');
+      console.error('更新個人檔案錯誤:', err);
+      Alert.alert('更新失敗', '無法更新個人檔案，請稍後再試');
     } finally {
       setEditLoading(false);
     }
@@ -209,11 +629,13 @@ const ProfileScreen: React.FC = () => {
     extrapolate: 'clamp',
   });
 
+  // 加載中狀態
   if (isLoading || !profile) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.accent} />
+          <Text style={styles.loadingText}>載入個人檔案...</Text>
         </View>
       </SafeAreaView>
     );
@@ -282,11 +704,21 @@ const ProfileScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.accent}
+            colors={[COLORS.accent]}
+            progressBackgroundColor={COLORS.card}
+          />
+        }
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
         )}
       >
+        {/* 個人資訊區塊 */}
         <View style={styles.profileInfo}>
           <Text style={styles.username}>{profile.username}</Text>
           <Text style={styles.bio}>{profile.bio || '這裡是自我介紹...'}</Text>
@@ -303,17 +735,21 @@ const ProfileScreen: React.FC = () => {
               <Text style={styles.statLabel}>貼文</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{profile.following_count}</Text>
+              <Text style={styles.statNum}>{profile.following_count || 0}</Text>
               <Text style={styles.statLabel}>追蹤</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{profile.followers_count}</Text>
+              <Text style={styles.statNum}>{profile.followers_count || 0}</Text>
               <Text style={styles.statLabel}>粉絲</Text>
             </View>
           </View>
           
           {/* 作品集區塊 */}
-          <PortfolioSection isMe={isMe} navigation={navigation} />
+          <ProfilePortfolioSection 
+            portfolios={portfolios}
+            isMe={isMe} 
+            navigation={navigation} 
+          />
           
           <View style={styles.actionRow}>
             {isMe ? (
@@ -401,21 +837,9 @@ const ProfileScreen: React.FC = () => {
           </View>
         )}
         
-        {/* 作品集 */}
+        {/* 作品集詳細展示頁籤 */}
         {activeTab === 'portfolio' && (
           <View style={styles.contentContainer}>
-            {/* 添加作品集管理按鈕 */}
-            {isMe && (
-              <TouchableOpacity 
-                style={styles.portfolioManageButton}
-                onPress={() => navigation.navigate('Portfolio')}
-                activeOpacity={0.8}
-              >
-                <Ionicons name="briefcase-outline" size={18} color={COLORS.primary} />
-                <Text style={styles.portfolioManageText}>管理作品集</Text>
-              </TouchableOpacity>
-            )}
-
             {portfolios.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Ionicons name="briefcase-outline" size={48} color={COLORS.subText} />
@@ -434,12 +858,37 @@ const ProfileScreen: React.FC = () => {
               <View style={styles.portfolioGrid}>
                 {portfolios.map((item, idx) => (
                   <View key={idx} style={styles.portfolioCard}>
-                    {item.image && (
-                      <Image source={{ uri: item.image }} style={styles.portfolioImage} />
-                    )}
+                    {/* 作品集縮圖 */}
+                    <View style={styles.portfolioImageContainer}>
+                      <Image 
+                        source={{ 
+                          uri: item.image || item.thumbnail || `https://picsum.photos/seed/portfolio${idx}/800/600` 
+                        }} 
+                        style={styles.portfolioImage} 
+                      />
+                    </View>
+                    
                     <View style={styles.portfolioContent}>
                       <Text style={styles.portfolioTitle}>{item.title}</Text>
                       <Text style={styles.portfolioDesc} numberOfLines={2}>{item.description}</Text>
+                      
+                      {/* 技術標籤 */}
+                      {item.technology_used && item.technology_used.length > 0 && (
+                        <View style={styles.techTagsContainer}>
+                          {item.technology_used.slice(0, 3).map((tech: string, i: number) => (
+                            <View key={`tech-${i}`} style={styles.techTag}>
+                              <Text style={styles.techTagText}>{tech}</Text>
+                            </View>
+                          ))}
+                          {item.technology_used.length > 3 && (
+                            <View style={styles.techTag}>
+                              <Text style={styles.techTagText}>+{item.technology_used.length - 3}</Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                      
+                      {/* 項目連結 */}
                       <View style={styles.linkRow}>
                         {item.github_url && (
                           <TouchableOpacity 
@@ -502,99 +951,58 @@ const ProfileScreen: React.FC = () => {
             </View>
             
             <ScrollView style={styles.modalBody}>
-              <View style={styles.avatarEditSection}>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>頭像</Text>
                 <AvatarUploader
                   avatarUrl={editAvatar}
-                  onPick={() => {}}
+                  onPick={(uri?: string) => uri && setEditAvatar(uri)}
                   size={100}
                 />
-                <TouchableOpacity style={styles.avatarEditButton}>
-                  <Ionicons name="camera" size={18} color={COLORS.primary} />
-                  <Text style={styles.avatarEditText}>更換頭像</Text>
-                </TouchableOpacity>
               </View>
               
-              <Text style={styles.label}>自我介紹</Text>
-              <TextInput
-                value={editBio}
-                onChangeText={setEditBio}
-                style={styles.input}
-                placeholder="告訴大家你是誰..."
-                placeholderTextColor={COLORS.placeholder}
-                multiline
-                numberOfLines={3}
-              />
-              
-              <Text style={styles.label}>技能標籤 (以逗號分隔)</Text>
-              <TextInput
-                value={editSkills}
-                onChangeText={setEditSkills}
-                style={styles.input}
-                placeholder="如：React Native, Node.js, UI Design"
-                placeholderTextColor={COLORS.placeholder}
-              />
-              
-              <View style={styles.inputFooter}>
-                <Text style={styles.helperText}>添加你的專業技能，讓大家更了解你</Text>
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>自我介紹</Text>
+                <TextInput
+                  style={styles.textArea}
+                  value={editBio}
+                  onChangeText={setEditBio}
+                  placeholder="寫下一些關於自己的介紹..."
+                  placeholderTextColor={COLORS.subText}
+                  multiline
+                  numberOfLines={4}
+                />
               </View>
-            </ScrollView>
-            
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={[styles.saveButton, editLoading && styles.saveButtonDisabled]}
+              
+              <View style={styles.formGroup}>
+                <Text style={styles.label}>技能標籤 (用逗號分隔)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={editSkills}
+                  onChangeText={setEditSkills}
+                  placeholder="React Native, TypeScript, UI Design..."
+                  placeholderTextColor={COLORS.subText}
+                />
+              </View>
+              
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  editLoading && styles.saveButtonDisabled
+                ]}
                 onPress={handleEditProfile}
                 disabled={editLoading}
               >
                 {editLoading ? (
                   <ActivityIndicator size="small" color={COLORS.primary} />
                 ) : (
-                  <Text style={styles.saveButtonText}>儲存更改</Text>
+                  <Text style={styles.saveButtonText}>儲存</Text>
                 )}
               </TouchableOpacity>
-            </View>
+            </ScrollView>
           </View>
-        </View>
+    </View>
       </Modal>
     </SafeAreaView>
-  );
-};
-
-// 作品集区块组件
-const PortfolioSection = ({ isMe, navigation }: { 
-  isMe: boolean; 
-  navigation: any 
-}) => {
-  return (
-    <View style={styles.sectionContainer}>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>作品集</Text>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('PortfolioScreen')}
-          style={styles.viewAllButton}
-        >
-          <Text style={styles.viewAllText}>查看全部</Text>
-          <Ionicons name="chevron-forward" size={16} color={COLORS.accent} />
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity 
-        style={styles.portfolioPreview}
-        onPress={() => navigation.navigate('PortfolioScreen')}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="briefcase-outline" size={28} color={COLORS.accent} />
-        <View style={styles.portfolioPreviewContent}>
-          <Text style={styles.portfolioPreviewTitle}>
-            {isMe ? '查看我的作品集' : '查看TA的作品集'}
-          </Text>
-          <Text style={styles.portfolioPreviewSubtitle}>
-            {isMe 
-              ? '展示你的项目和技能' 
-              : '了解更多专业作品'}
-          </Text>
-        </View>
-        <Ionicons name="arrow-forward" size={20} color={COLORS.subText} />
-      </TouchableOpacity>
-    </View>
   );
 };
 
@@ -608,29 +1016,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  loadingText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    marginTop: SPACING.md,
+  },
   header: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 10,
     overflow: 'hidden',
+    zIndex: 10,
   },
   headerBackground: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: COLORS.background,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  headerTitle: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: LAYOUT.headerHeight,
+    height: HEADER_MIN_HEIGHT,
+    zIndex: 2,
+  },
+  headerTitle: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 4 : 8,
+    left: 0,
+    right: 0,
+    height: HEADER_MIN_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10,
+    zIndex: 3,
   },
   headerTitleText: {
     fontFamily: FONTS.bold,
@@ -638,89 +1054,98 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   coverImage: {
-    width: '100%',
-    height: '100%',
-    opacity: 0.4,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: HEADER_MAX_HEIGHT,
+    resizeMode: 'cover',
+    zIndex: 1,
   },
   avatarContainer: {
     position: 'absolute',
-    borderRadius: 999,
+    borderRadius: 100,
     borderWidth: 3,
     borderColor: COLORS.background,
-    zIndex: 20,
     overflow: 'hidden',
-    ...SHADOW.md,
+    zIndex: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
   },
   scrollContent: {
     paddingTop: HEADER_MAX_HEIGHT + SPACING.lg,
-    minHeight: Dimensions.get('window').height - LAYOUT.safeBottom,
+    minHeight: height,
   },
   profileInfo: {
-    alignItems: 'center',
     paddingHorizontal: SPACING.lg,
   },
   username: {
     fontFamily: FONTS.bold,
     fontSize: FONTS.size.xl,
     color: COLORS.text,
+    marginTop: SPACING.lg,
     marginBottom: SPACING.xs,
+    textAlign: 'center',
   },
   bio: {
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
-    color: COLORS.subText,
+    color: COLORS.text,
+    lineHeight: 22,
     textAlign: 'center',
     marginBottom: SPACING.md,
-    paddingHorizontal: SPACING.lg,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: SPACING.md,
+    marginVertical: SPACING.lg,
   },
   statBox: {
     alignItems: 'center',
-    paddingHorizontal: SPACING.xl,
+    marginHorizontal: SPACING.lg,
   },
   statNum: {
     fontFamily: FONTS.bold,
     fontSize: FONTS.size.lg,
     color: COLORS.text,
-    marginBottom: 2,
   },
   statLabel: {
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.sm,
     color: COLORS.subText,
+    marginTop: 4,
   },
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: SPACING.md,
+    marginTop: SPACING.md,
     marginBottom: SPACING.lg,
   },
   editBtn: {
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.full,
-    paddingVertical: SPACING.sm,
-    paddingHorizontal: SPACING.xl,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.md,
+    backgroundColor: COLORS.accent,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
+    ...SHADOW.sm,
   },
   editBtnText: {
-    color: COLORS.primary,
-    fontFamily: FONTS.medium,
+    fontFamily: FONTS.bold,
     fontSize: FONTS.size.sm,
+    color: COLORS.primary,
     marginLeft: SPACING.xs,
   },
   tabContainer: {
     flexDirection: 'row',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: COLORS.divider,
-    marginBottom: SPACING.md,
+    borderColor: COLORS.border,
+    marginTop: SPACING.lg,
   },
   tabButton: {
     flex: 1,
@@ -728,7 +1153,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: SPACING.md,
-    position: 'relative',
   },
   activeTabButton: {
     borderBottomWidth: 2,
@@ -742,55 +1166,103 @@ const styles = StyleSheet.create({
   },
   activeTabButtonText: {
     color: COLORS.accent,
+    fontFamily: FONTS.bold,
   },
   contentContainer: {
     paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.xxl,
+  },
+  emptyText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.md,
+    color: COLORS.subText,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.lg,
+  },
+  emptyButton: {
+    backgroundColor: COLORS.accent,
+    paddingVertical: SPACING.sm,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.md,
+  },
+  emptyButtonText: {
+    fontFamily: FONTS.bold,
+    fontSize: FONTS.size.sm,
+    color: COLORS.primary,
   },
   postContainer: {
+    marginBottom: SPACING.lg,
     position: 'relative',
-    marginBottom: SPACING.md,
   },
   deleteBtn: {
     position: 'absolute',
-    top: SPACING.md,
-    right: SPACING.md,
-    backgroundColor: `${COLORS.error}99`,
-    borderRadius: RADIUS.full,
+    top: SPACING.sm,
+    right: SPACING.sm,
+    backgroundColor: `${COLORS.error}30`,
     width: 32,
     height: 32,
-    justifyContent: 'center',
+    borderRadius: RADIUS.full,
     alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 10,
   },
   portfolioGrid: {
-    flexDirection: 'column',
+    marginTop: SPACING.md,
   },
   portfolioCard: {
     backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    marginBottom: SPACING.md,
+    borderRadius: RADIUS.lg,
+    marginBottom: SPACING.lg,
     overflow: 'hidden',
     ...SHADOW.md,
   },
-  portfolioImage: {
-    width: '100%',
+  portfolioImageContainer: {
     height: 180,
-    backgroundColor: COLORS.elevated,
+    width: '100%',
+  },
+  portfolioImage: {
+    height: '100%',
+    width: '100%',
+    resizeMode: 'cover',
   },
   portfolioContent: {
     padding: SPACING.md,
   },
   portfolioTitle: {
     fontFamily: FONTS.bold,
-    fontSize: FONTS.size.lg,
+    fontSize: FONTS.size.md,
     color: COLORS.text,
     marginBottom: SPACING.xs,
   },
   portfolioDesc: {
     fontFamily: FONTS.regular,
-    fontSize: FONTS.size.md,
+    fontSize: FONTS.size.sm,
     color: COLORS.subText,
-    marginBottom: SPACING.md,
+    lineHeight: 20,
+    marginBottom: SPACING.sm,
+  },
+  techTagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: SPACING.xs,
+  },
+  techTag: {
+    backgroundColor: COLORS.elevated,
+    paddingHorizontal: SPACING.sm,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+    marginRight: SPACING.xs,
+    marginBottom: SPACING.xs,
+  },
+  techTagText: {
+    fontFamily: FONTS.medium,
+    fontSize: FONTS.size.xxs,
+    color: COLORS.subText,
   },
   linkRow: {
     flexDirection: 'row',
@@ -801,35 +1273,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: COLORS.elevated,
-    paddingVertical: SPACING.xs,
     paddingHorizontal: SPACING.sm,
-    borderRadius: RADIUS.full,
-    marginRight: SPACING.sm,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.md,
+    marginRight: SPACING.xs,
     marginBottom: SPACING.xs,
   },
   link: {
-    color: COLORS.text,
     fontFamily: FONTS.medium,
     fontSize: FONTS.size.xs,
+    color: COLORS.text,
     marginLeft: 4,
   },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: SPACING.xxl,
-  },
-  emptyText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.md,
-    color: COLORS.subText,
-    marginTop: SPACING.md,
-  },
   footer: {
-    height: LAYOUT.safeBottom + SPACING.lg,
+    height: 100,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: `${COLORS.primary}CC`,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -845,10 +1306,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    padding: SPACING.md,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.divider,
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.md,
+    borderBottomColor: COLORS.border,
   },
   modalTitle: {
     fontFamily: FONTS.bold,
@@ -856,30 +1316,16 @@ const styles = StyleSheet.create({
     color: COLORS.text,
   },
   modalCloseButton: {
-    padding: SPACING.xs,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   modalBody: {
     padding: SPACING.lg,
   },
-  avatarEditSection: {
-    alignItems: 'center',
+  formGroup: {
     marginBottom: SPACING.lg,
-  },
-  avatarEditButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.accent,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    borderRadius: RADIUS.full,
-    marginTop: SPACING.sm,
-    ...SHADOW.sm,
-  },
-  avatarEditText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.sm,
-    color: COLORS.primary,
-    marginLeft: 4,
   },
   label: {
     fontFamily: FONTS.medium,
@@ -888,37 +1334,36 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs,
   },
   input: {
-    backgroundColor: COLORS.elevated,
-    borderRadius: RADIUS.sm,
-    padding: SPACING.md,
     fontFamily: FONTS.regular,
     fontSize: FONTS.size.md,
     color: COLORS.text,
+    backgroundColor: COLORS.elevated,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
-    minHeight: 50,
   },
-  inputFooter: {
-    marginTop: SPACING.xs,
-    marginBottom: SPACING.md,
-  },
-  helperText: {
+  textArea: {
     fontFamily: FONTS.regular,
-    fontSize: FONTS.size.xs,
-    color: COLORS.subText,
-  },
-  modalFooter: {
-    borderTopWidth: 1,
-    borderTopColor: COLORS.divider,
-    padding: SPACING.md,
+    fontSize: FONTS.size.md,
+    color: COLORS.text,
+    backgroundColor: COLORS.elevated,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    height: 100,
+    textAlignVertical: 'top',
   },
   saveButton: {
     backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.md,
     paddingVertical: SPACING.md,
+    borderRadius: RADIUS.md,
     alignItems: 'center',
     justifyContent: 'center',
-    ...SHADOW.md,
+    marginTop: SPACING.lg,
   },
   saveButtonDisabled: {
     opacity: 0.7,
@@ -927,83 +1372,6 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     fontSize: FONTS.size.md,
     color: COLORS.primary,
-  },
-  portfolioManageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.elevated,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.sm,
-    borderRadius: RADIUS.full,
-    marginBottom: SPACING.md,
-  },
-  portfolioManageText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.sm,
-    color: COLORS.text,
-    marginLeft: SPACING.xs,
-  },
-  emptyButton: {
-    backgroundColor: COLORS.accent,
-    borderRadius: RADIUS.full,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.sm,
-    marginTop: SPACING.md,
-  },
-  emptyButtonText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.sm,
-    color: COLORS.primary,
-  },
-  portfolioPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.card,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    ...SHADOW.sm,
-  },
-  portfolioPreviewContent: {
-    flex: 1,
-    marginLeft: SPACING.md,
-    marginRight: SPACING.sm,
-  },
-  portfolioPreviewTitle: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.md,
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  portfolioPreviewSubtitle: {
-    fontFamily: FONTS.regular,
-    fontSize: FONTS.size.sm,
-    color: COLORS.subText,
-  },
-  sectionContainer: {
-    width: '100%',
-    marginVertical: SPACING.md,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: SPACING.sm,
-    paddingHorizontal: SPACING.md,
-  },
-  sectionTitle: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.md,
-    color: COLORS.text,
-  },
-  viewAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  viewAllText: {
-    fontFamily: FONTS.medium,
-    fontSize: FONTS.size.sm,
-    color: COLORS.accent,
   },
 });
 

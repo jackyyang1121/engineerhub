@@ -146,14 +146,37 @@ public class HelloWorld {
 // 獲取貼文列表
 export const getPosts = async (token: string, page: number = 1) => {
   try {
+    // 更詳細的日誌輸出
+    console.log('開始獲取貼文列表，API路徑:', `${API_URL}/api/posts/posts/?page=${page}`);
+    console.log('使用的令牌前10個字元:', token.slice(0, 10) + '...');
+    
     // 嘗試從API獲取資料
     const response = await axios.get(`${API_URL}/api/posts/posts/?page=${page}`, {
       headers: { Authorization: `Token ${token}` }
     });
+    
+    console.log('API 請求成功，返回數據條數:', response.data.results?.length || 0);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    // 改進的錯誤處理邏輯
     console.error('Error fetching posts:', error);
+    
+    if (error.response) {
+      console.error('Response status:', error.response.status);
+      console.error('Response data:', error.response.data);
+      
+      // 檢查是否為401未授權錯誤
+      if (error.response.status === 401) {
+        console.warn('授權失敗 (401)，使用模擬數據');
+      }
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
     // 返回預先定義的模擬資料格式，與API返回結構保持一致
+    console.log('返回模擬數據...');
     return { 
       results: generateMockPosts(15),
       next: page < 3 ? `${API_URL}/api/posts/posts/?page=${page+1}` : null, // 模擬分頁

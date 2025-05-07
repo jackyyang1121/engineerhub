@@ -5,7 +5,7 @@ import { COLORS, RADIUS, SHADOW } from '../theme';
 
 interface AvatarUploaderProps {
   avatarUrl?: string;
-  onPick: () => void;
+  onPick: (uri?: string) => void;
   size?: number;
 }
 
@@ -34,7 +34,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   return (
     <View style={styles.container}>
       <TouchableOpacity 
-        onPress={onPick} 
+        onPress={() => onPick()} 
         style={[styles.avatarBtn, dynamicStyles.container]} 
         activeOpacity={0.8}
       >

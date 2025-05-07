@@ -18,66 +18,63 @@ export const API_URL = getApiUrl();
 
 // 环境配置
 export const CONFIG = {
-  // 开发环境相关
-  DEV: {
-    // 是否启用模拟数据（不请求真实后端）
-    USE_MOCK_DATA: true,
-    // 是否显示日志
-    SHOW_LOGS: true,
-    // 是否跳过登录（自动登录）
-    SKIP_LOGIN: false,
-    // 模擬網絡延遲（毫秒）
-    NETWORK_DELAY: 300,
-    // 開發模式下的後端API
-    DEV_API_URL: getApiUrl(),
-    // 是否在模擬未授權時自動使用模擬帳號
-    AUTO_MOCK_ON_FAIL: true,
-  },
-  
-  // 全局设置
+  // 全局設置
   GLOBAL: {
-    // 默认页数大小
-    PAGE_SIZE: 15,
-    // 图片质量
-    IMAGE_QUALITY: 0.8,
-    // 最大上传图片大小（字节）
-    MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
-    // 動畫持續時間（毫秒）
-    ANIMATION_DURATION: 220,
-    // 默認請求超時時間（毫秒）
-    REQUEST_TIMEOUT: 10000,
+    // API請求超時時間(ms)
+    REQUEST_TIMEOUT: 15000,
+    // 緩存有效期(ms)
+    CACHE_TTL: 5 * 60 * 1000,
   },
   
-  // 缓存设置
-  CACHE: {
-    // 缓存过期时间（毫秒）
-    EXPIRATION: 15 * 60 * 1000, // 15分钟
-    // 圖片緩存時間（毫秒）
-    IMAGE_EXPIRATION: 24 * 60 * 60 * 1000, // 24小時
-    // 是否緩存首頁資料
-    CACHE_HOME_DATA: true,
+  // 開發環境設置
+  DEV: {
+    // 是否使用模擬數據
+    USE_MOCK_DATA: true,
+    // 是否顯示API日誌
+    SHOW_API_LOGS: true,
+    // 是否顯示調試信息
+    DEBUG: true,
+    // 是否跳過登入
+    SKIP_LOGIN: false,
   },
   
-  // UI 設置
-  UI: {
-    // 深色模式
-    DARK_MODE: true,
-    // 自動切換深色/淺色模式
-    AUTO_DARK_MODE: true,
-    // 平滑動畫
-    SMOOTH_ANIMATIONS: true,
-    // 是否使用原生元素
-    USE_NATIVE_COMPONENTS: Platform.OS !== 'web',
+  // 認證設置
+  AUTH: {
+    // Token存儲鍵
+    TOKEN_KEY: '@authToken',
+    // 刷新Token鍵
+    REFRESH_TOKEN_KEY: '@refreshToken',
+    // Token有效期(ms)
+    TOKEN_TTL: 7 * 24 * 60 * 60 * 1000,
   },
   
-  // 安全設置
-  SECURITY: {
-    // Token 過期時間（天）
-    TOKEN_EXPIRATION_DAYS: 7,
-    // 是否加密本地存儲
-    ENCRYPT_STORAGE: false,
+  // 媒體文件設置
+  MEDIA: {
+    // 最大上傳文件大小(bytes)
+    MAX_UPLOAD_SIZE: 10 * 1024 * 1024,
+    // 支持的圖片類型
+    ALLOWED_IMAGE_TYPES: ['image/jpeg', 'image/png', 'image/gif'],
+    // 支持的視頻類型
+    ALLOWED_VIDEO_TYPES: ['video/mp4', 'video/quicktime'],
+    // 圖片壓縮質量(0-1)
+    IMAGE_COMPRESSION_QUALITY: 0.8,
   },
+  
+  // 錯誤處理
+  ERROR: {
+    // 默認錯誤消息
+    DEFAULT_MESSAGE: '發生錯誤，請稍後再試',
+    // 網絡錯誤消息
+    NETWORK_ERROR: '網絡連接失敗，請檢查您的網絡',
+    // 認證錯誤消息
+    AUTH_ERROR: '認證失敗，請重新登錄',
+    // 伺服器錯誤消息
+    SERVER_ERROR: '伺服器錯誤，請稍後再試',
+  }
 };
+
+// 導出默認配置
+export default CONFIG;
 
 // 判斷是否為開發環境
 export const IS_DEV = __DEV__; 

@@ -106,15 +106,30 @@ export const getUserPortfolios = async (token: string, userId: number) => {
 // 获取当前用户的作品集列表
 export const getMyPortfolios = async (token: string) => {
   try {
+    console.log('正在调用API: /api/portfolios/my-portfolios/');
     const response = await apiClient.get('/api/portfolios/my-portfolios/', {
       headers: { Authorization: `Token ${token}` }
     });
+    console.log('API响应状态:', response.status);
     return response.data;
   } catch (error: any) {
     // 详细记录错误，便于调试
     console.error('获取我的作品集失败:', error);
     console.error('错误状态码:', error.response?.status);
     console.error('错误详情:', error.response?.data);
+    
+    if (error.response?.status === 404) {
+      console.error('404错误，尝试备用路径');
+      try {
+        const backupResponse = await apiClient.get('/api/portfolios/portfolios/', {
+          headers: { Authorization: `Token ${token}` }
+        });
+        console.log('备用API响应状态:', backupResponse.status);
+        return backupResponse.data;
+      } catch (backupError) {
+        console.error('备用路径也失败:', backupError);
+      }
+    }
     
     // 开发环境使用模拟数据
     if (CONFIG.DEV.USE_MOCK_DATA) {
@@ -262,4 +277,4 @@ export const generateMockPortfolios = (count = 3, userId = 1): Portfolio[] => {
       }
     };
   });
-}; 
+};

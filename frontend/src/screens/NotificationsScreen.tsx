@@ -287,7 +287,7 @@ const NotificationsScreen: React.FC = () => {
       
       // 從列表中移除此通知
       setNotifications(prev => prev.filter(notification => notification.id !== notificationId));
-    } catch (err) {
+      } catch (err) {
       console.error('拒絕追蹤請求失敗:', err);
       Alert.alert('錯誤', '無法拒絕追蹤請求，請稍後再試');
     }
@@ -379,7 +379,7 @@ const NotificationsScreen: React.FC = () => {
   
   // 渲染通知項目
   const renderNotificationItem = ({ item }: { item: Notification }) => {
-    return (
+  return (
       <Pressable
         style={({ pressed }) => [
           styles.notificationItem,

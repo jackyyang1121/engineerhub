@@ -456,7 +456,7 @@ public class HelloWorld {
           ) : posts.length > 0 ? (
             <View style={styles.listFooter}>
               <Text style={styles.footerText}>已無更多內容</Text>
-            </View>
+          </View>
           ) : null
         }
         onScroll={Animated.event(
