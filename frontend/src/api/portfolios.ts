@@ -1,4 +1,4 @@
-// 作品集 API 文件，处理所有与作品集相关的 API 请求
+// api/portfolios.ts - 作品集API調用模組，處理所有與作品集相關的前後端數據交互
 // 功能：提供作品集列表获取、创建、更新、删除等 API 调用
 // 数据来源：后端 API 端点
 // 数据流向：前端发送请求，后端处理后返回数据
@@ -106,8 +106,8 @@ export const getUserPortfolios = async (token: string, userId: number) => {
 // 获取当前用户的作品集列表
 export const getMyPortfolios = async (token: string) => {
   try {
-    console.log('正在调用API: /api/portfolios/my-portfolios/');
-    const response = await apiClient.get('/api/portfolios/my-portfolios/', {
+    console.log('正在调用API: /api/portfolios/portfolios/');
+    const response = await apiClient.get('/api/portfolios/portfolios/', {
       headers: { Authorization: `Token ${token}` }
     });
     console.log('API响应状态:', response.status);
@@ -117,19 +117,6 @@ export const getMyPortfolios = async (token: string) => {
     console.error('获取我的作品集失败:', error);
     console.error('错误状态码:', error.response?.status);
     console.error('错误详情:', error.response?.data);
-    
-    if (error.response?.status === 404) {
-      console.error('404错误，尝试备用路径');
-      try {
-        const backupResponse = await apiClient.get('/api/portfolios/portfolios/', {
-          headers: { Authorization: `Token ${token}` }
-        });
-        console.log('备用API响应状态:', backupResponse.status);
-        return backupResponse.data;
-      } catch (backupError) {
-        console.error('备用路径也失败:', backupError);
-      }
-    }
     
     // 开发环境使用模拟数据
     if (CONFIG.DEV.USE_MOCK_DATA) {

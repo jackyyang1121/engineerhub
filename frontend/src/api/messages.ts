@@ -1,6 +1,7 @@
-// messages.ts
-// 私訊 API 服務文件，集中處理與訊息相關的 API 請求
+// api/messages.ts - 私訊API調用模組，處理用戶間即時通訊的HTTP請求
 // 功能: 獲取聊天列表、獲取訊息、發送訊息、標記已讀等
+// 資料來源：後端 API 端點
+// 資料流向：前端發送請求，後端處理後回傳數據
 
 import axios from 'axios';
 import { API_URL, CONFIG } from '../config';

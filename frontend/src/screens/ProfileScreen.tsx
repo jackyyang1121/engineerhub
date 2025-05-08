@@ -1,6 +1,6 @@
-// 個人檔案頁面檔案，處理檔案讀取與更新功能
+// screens/ProfileScreen.tsx - 用戶個人檔案頁面，顯示用戶資料、作品集與貼文
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { 
   View, 
   Text, 
@@ -19,7 +19,8 @@ import {
   Dimensions,
   StatusBar,
   Platform,
-  RefreshControl
+  RefreshControl,
+  InteractionManager,
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING, ANIMATION, LAYOUT } from '../theme';
@@ -30,23 +31,34 @@ import MessageButton from '../components/MessageButton';
 import PostItem from '../components/PostItem';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BlurView } from '@react-native-community/blur';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import LinearGradient from 'react-native-linear-gradient';
+import ProfileHeaderSection from '../components/ProfileHeaderSection';
+import EnhancedSkillTags from '../components/EnhancedSkillTags';
+import PortfolioGallery from '../components/PortfolioGallery';
+import ProfileTabBar from '../components/ProfileTabBar';
+import ProfileEditModal from '../components/ProfileEditModal';
 
 // 定義導航參數類型
 type RootStackParamList = {
-  Profile: { userId: number };
-  Portfolio: undefined;
+  Profile: { userId?: number };
+  Portfolio: { userId?: number };
   PostDetail: { postId: number };
+  Messages: { userId?: number, username?: string };
+  Settings: undefined;
 };
 
+type ProfileScreenRouteProp = RouteProp<RootStackParamList, 'Profile'>;
 type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const { width, height } = Dimensions.get('window');
 const HEADER_MAX_HEIGHT = 280;
 const HEADER_MIN_HEIGHT = LAYOUT.headerHeight;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+
+// 使用React.memo來優化PostItem渲染
+const MemoizedPostItem = memo(PostItem);
 
 // 作品集區塊組件，用於顯示在個人檔案頁面中
 const ProfilePortfolioSection = ({ portfolios, isMe, navigation }: { 
@@ -408,33 +420,17 @@ const ProfileScreen: React.FC = () => {
         // 獲取作品集
         console.log('獲取作品集...');
         try {
-          // 嘗試兩個可能的API端點
-          let portfoliosData;
-          try {
-            const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/my-portfolios/', {
-              headers: { Authorization: `Token ${token}` },
-            });
-            
-            if (portfoliosRes.ok) {
-              portfoliosData = await portfoliosRes.json();
-            } else {
-              throw new Error('First endpoint failed');
-            }
-          } catch (e) {
-            // 嘗試備用端點
-            console.log('嘗試備用作品集API端點...');
-            const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/portfolios/', {
-              headers: { Authorization: `Token ${token}` },
-            });
-            
-            if (!portfoliosRes.ok) {
-              throw new Error('Both portfolio endpoints failed');
-            }
-            
-            portfoliosData = await portfoliosRes.json();
-          }
+          const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/portfolios/', {
+            headers: { Authorization: `Token ${token}` },
+          });
           
-          setPortfolios(portfoliosData.results || portfoliosData || []);
+          if (portfoliosRes.ok) {
+            const portfoliosData = await portfoliosRes.json();
+            setPortfolios(portfoliosData.results || portfoliosData || []);
+          } else {
+            console.error('獲取作品集失敗，HTTP狀態:', portfoliosRes.status);
+            setPortfolios([]);
+          }
         } catch (e) {
           console.error('獲取作品集失敗:', e);
           setPortfolios([]);
@@ -514,13 +510,16 @@ const ProfileScreen: React.FC = () => {
       
       // 嘗試獲取作品集
       try {
-        const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/my-portfolios/', {
+        const portfoliosRes = await fetch('http://10.0.2.2:8000/api/portfolios/portfolios/', {
           headers: { Authorization: `Token ${token}` },
         });
         
         if (portfoliosRes.ok) {
           const portfoliosData = await portfoliosRes.json();
           setPortfolios(portfoliosData.results || portfoliosData || []);
+        } else {
+          console.error('刷新作品集失敗，HTTP狀態:', portfoliosRes.status);
+          setPortfolios([]);
         }
       } catch (e) {
         console.error('刷新作品集失敗:', e);
@@ -847,7 +846,7 @@ const ProfileScreen: React.FC = () => {
                 {isMe && (
                   <TouchableOpacity 
                     style={styles.emptyButton}
-                    onPress={() => navigation.navigate('Portfolio')}
+                    onPress={() => navigation.navigate('Portfolio', { userId: undefined })}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.emptyButtonText}>添加作品集</Text>
@@ -1000,7 +999,7 @@ const ProfileScreen: React.FC = () => {
               </TouchableOpacity>
             </ScrollView>
           </View>
-    </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

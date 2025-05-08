@@ -1,4 +1,4 @@
-# 視圖檔案，定義 API 端點的邏輯
+# users/views.py - 用戶相關API視圖，定義用戶註冊、登入、個人檔案等REST API端點
 # 功能：處理用戶註冊、登入、個人檔案、設定、已儲存貼文等 API 請求
 # 資料來源：前端傳入資料、models.py、serializers.py
 # 資料流向：API 輸入/輸出 JSON，與前端互動
@@ -12,6 +12,7 @@ from .models import User
 from apps.posts.models import Post
 from apps.posts.serializers import PostSerializer
 from rest_framework.views import APIView
+from .models import Skill
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -109,7 +110,14 @@ class ProfileView(APIView):
             # 確保 skills 是列表
             if isinstance(request.data['skills'], list):
                 # 過濾空字串
-                user.skills = [skill.strip() for skill in request.data['skills'] if isinstance(skill, str) and skill.strip()]
+                skill_names = [skill.strip() for skill in request.data['skills'] if isinstance(skill, str) and skill.strip()]
+                # 獲取或創建對應的技能對象
+                skill_objects = []
+                for skill_name in skill_names:
+                    skill_obj, created = Skill.objects.get_or_create(name=skill_name)
+                    skill_objects.append(skill_obj)
+                # 使用set方法設置多對多關係
+                user.skills.set(skill_objects)
             else:
                 return Response({"skills": "技能必須為陣列"}, status=status.HTTP_400_BAD_REQUEST)
         

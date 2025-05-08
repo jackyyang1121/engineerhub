@@ -1,5 +1,5 @@
-// src/screens/PortfolioScreen.tsx
-// 作品集頁面，展示用戶的專業作品和項目 - 采用简约高级设计风格
+// screens/PortfolioScreen.tsx - 作品集管理頁面，用於查看、創建和編輯用戶的專業作品
+// 功能：展示作品集列表、添加新作品集、編輯現有作品集、上傳媒體文件等
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
@@ -178,7 +178,7 @@ const PortfolioScreen: React.FC = () => {
     try {
       // 輸出詳細日誌用於調試
       console.log('正在獲取作品集...', { token });
-      console.log('請求URL: /api/portfolios/my-portfolios/');
+      console.log('請求URL: /api/portfolios/portfolios/');
       
       // 實際API調用
       const data = await getMyPortfolios(token);

@@ -1,3 +1,4 @@
+// components/SkillTags.tsx - 技能標籤顯示組件，用於個人資料頁面展示用戶技能
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { COLORS, FONTS, RADIUS, SHADOW, SPACING } from '../theme';
