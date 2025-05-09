@@ -1,5 +1,5 @@
 // API 配置文件
-import { Platform } from 'react-native';
+import { Platform } from 'react-native';   //Platform 是 React Native 提供的一個常量，用於表示當前運行環境的平臺。
 
 // 根據平台動態選擇API地址
 const getApiUrl = () => {
@@ -21,9 +21,10 @@ export const CONFIG = {
   // 全局設置
   GLOBAL: {
     // API請求超時時間(ms)
-    REQUEST_TIMEOUT: 15000,
+    REQUEST_TIMEOUT: 15000,    //15秒
     // 緩存有效期(ms)
-    CACHE_TTL: 5 * 60 * 1000,
+    CACHE_TTL: 5 * 60 * 1000,    //5分鐘
+    //緩存是一種臨時儲存資料的技術，用於將經常使用或計算成本較高的資料儲存在快速存取的記憶體或儲存空間中，以便在未來快速訪問，而無需重複計算或從原始來源（例如資料庫、API）重新獲取。
   },
   
   // 開發環境設置
@@ -45,7 +46,7 @@ export const CONFIG = {
     // 刷新Token鍵
     REFRESH_TOKEN_KEY: '@refreshToken',
     // Token有效期(ms)
-    TOKEN_TTL: 7 * 24 * 60 * 60 * 1000,
+    TOKEN_TTL: 7 * 24 * 60 * 60 * 1000,    //7天
   },
   
   // 媒體文件設置

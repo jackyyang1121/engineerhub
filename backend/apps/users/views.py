@@ -26,7 +26,7 @@ class RegisterView(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         # 處理註冊請求
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)    #self.get_serializer(data=request.data) 是 Django REST framework 提供的一個方法，用於獲取序列化器實例。
         serializer.is_valid(raise_exception=True)  # 驗證資料
         user = serializer.save()                   # 儲存用戶
         token, _ = Token.objects.get_or_create(user=user)  # 創建或獲取 Token

@@ -6,82 +6,82 @@
 
 import { Platform } from 'react-native';
 
-// 定義顏色系統
+// 定義顏色系統     拿到下面的COLORS去用
 const palette = {
   // 基础色板 - 采用黑蓝为主基調
-  black: '#0A0E14',
-  darkBlue: '#101720',
-  navy: '#1A202C',
-  midBlue: '#2D3748',
-  gray: '#4A5568',
-  lightGray: '#718096',
-  silver: '#A0AEC0',
-  lightSilver: '#CBD5E0',
-  white: '#F7FAFC',
+  black: '#0A0E14',      // 黑色
+  darkBlue: '#101720',   // 深藍色
+  navy: '#1A202C',      // 深藍色
+  midBlue: '#2D3748',   // 中藍色
+  gray: '#4A5568',      // 灰色
+  lightGray: '#718096', // 淺灰色
+  silver: '#A0AEC0',    // 銀色
+  lightSilver: '#CBD5E0', // 淺銀色
+  white: '#F7FAFC',     // 白色
   
   // 强调色
-  blue: '#3B82F6',
-  lightBlue: '#63B3ED',
-  indigo: '#5A67D8',
-  purple: '#805AD5',
+  blue: '#3B82F6',      // 藍色
+  lightBlue: '#63B3ED',  // 淺藍色
+  indigo: '#5A67D8',    // 靛藍色
+  purple: '#805AD5',    // 紫色
   
   // 功能色
-  success: '#38B2AC',
-  error: '#F56565',
-  warning: '#ED8936',
-  info: '#4299E1',
+  success: '#38B2AC',    // 成功色  
+  error: '#F56565',      // 錯誤色
+  warning: '#ED8936',    // 警告色
+  info: '#4299E1',       // 信息色
 };
 
 export const COLORS = {
   // 主色調 - 更现代的深色调
-  primary: palette.black,
-  secondary: palette.navy,
-  tertiary: palette.midBlue,
+  primary: palette.black,      // 主色
+  secondary: palette.navy,     // 次要色
+  tertiary: palette.midBlue,  // 次要色
   
   // 背景與區塊 - 更精致的层级关系
-  background: palette.black,
-  card: palette.darkBlue,
-  elevated: palette.navy,
-  border: palette.midBlue,
-  divider: `${palette.midBlue}99`,
+  background: palette.black,      // 背景色
+  card: palette.darkBlue,        // 卡片色
+  elevated: palette.navy,        // 次要色
+  border: palette.midBlue,       // 邊框色
+  divider: `${palette.midBlue}99`, // 分隔線色
   
   // 文字與內容 - 更柔和的文本对比
-  text: palette.white,
-  subText: palette.lightSilver,
-  placeholder: palette.silver,
+  text: palette.white,          // 文字色
+  subText: palette.lightSilver, // 次要文字色
+  placeholder: palette.silver,  // 占位符色
   
   // 強調與互動 - 更丰富的强调色
-  accent: palette.blue,
-  accentLight: palette.lightBlue,
-  accentDark: '#2563EB',
-  highlight: palette.purple,
+  accent: palette.blue,         // 強調色
+  accentLight: palette.lightBlue, // 淺強調色
+  accentDark: '#2563EB',        // 深強調色
+  highlight: palette.purple,    // 高亮色
   
   // 狀態與反饋 - 更优雅的状态色
-  success: palette.success,
-  error: palette.error,
-  warning: palette.warning,
-  info: palette.info,
+  success: palette.success,      // 成功色
+  error: palette.error,         // 錯誤色
+  warning: palette.warning,     // 警告色
+  info: palette.info,          // 信息色
   
   // 漸變與半透明 - 更现代的玻璃效果
-  overlay: 'rgba(10,14,20,0.6)',
-  shimmer: 'rgba(255,255,255,0.05)',
-  glass: 'rgba(10,14,20,0.85)',
+  overlay: 'rgba(10,14,20,0.6)', // 覆蓋層
+  shimmer: 'rgba(255,255,255,0.05)', // 閃爍效果
+  glass: 'rgba(10,14,20,0.85)', // 玻璃效果
   
   // 互動狀態 - 更精细的交互反馈
-  active: palette.blue,
-  inactive: palette.gray,
-  pressed: palette.indigo,
-  ripple: 'rgba(59,130,246,0.25)',
+  active: palette.blue,         // 活躍色
+  inactive: palette.gray,      // 不活躍色
+  pressed: palette.indigo,     // 按下色
+  ripple: 'rgba(59,130,246,0.25)', // 水波紋效果
   
   // 梯度色 - 用于高级UI效果
   gradient: {
-    primary: ['#0A0E14', '#1A202C'],
-    accent: ['#3B82F6', '#805AD5'],
-    card: ['#101720', '#1A202C'],
+    primary: ['#0A0E14', '#1A202C'], // 主梯度  
+    accent: ['#3B82F6', '#805AD5'], // 強調梯度
+    card: ['#101720', '#1A202C'],   // 卡片梯度
   }
 };
 
-// 确定跨平台字体
+// 确定跨平台字体    拿到下面的FONTS去用
 const getFontFamily = () => {
   if (Platform.OS === 'ios') {
     return {
@@ -268,7 +268,7 @@ export const ANIMATION = {
   }
 };
 
-// 佈局常量 - 考虑现代设备特性
+// 佈局常量 - 考虑现代设备特性      目前沒用到
 export const LAYOUT = {
   fullWidth: '100%',
   contentWidth: '90%',

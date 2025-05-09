@@ -1,8 +1,8 @@
 // 用戶認證 Context，提供全局 token 狀態與操作方法
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { CONFIG } from '../config';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CONFIG } from '../config';   
+import AsyncStorage from '@react-native-async-storage/async-storage';   //AsyncStorage 是 React Native 提供的一個用於存儲和檢索數據的 API，允許在應用程式中保存和檢索數據。
 import { Alert } from 'react-native';
 
 // 存储键名
@@ -16,13 +16,13 @@ export interface User {
   username: string;
   email: string;
   avatar?: string;
-  bio?: string;
+  bio?: string;        //? 表示該屬性是可選的，可以不存在，bio 是個人簡介
   followers_count?: number;
   following_count?: number;
-  skills?: string[];
+  skills?: string[];    //技能標籤
 }
 
-// 定義模擬用戶資料
+// 定義模擬用戶資料    測試用
 const MOCK_USER: User = {
   id: 1001,
   username: '測試用戶',
@@ -37,14 +37,14 @@ const MOCK_USER: User = {
 // 定義 Context 型別，包含 token、user 與相關方法
 interface AuthContextType {
   token: string;  // 用戶認證 Token
-  setToken: (token: string) => void;  // 設定 Token 的方法
+  setToken: (token: string) => void;  // 設定 Token 的方法，void 表示沒有返回值，(token: string) 表示接受一個字串參數。
   user: User | null;  // 用戶資訊
-  setUser: (user: User | null) => void;  // 設定用戶資訊的方法
-  logout: () => void;  // 登出方法
+  setUser: (user: User | null) => void;  // 設定用戶資訊的方法，(user: User | null) 表示接受一個 User 或 null 參數，void 表示沒有返回值。
+  logout: () => void;  // 登出方法，void 表示沒有返回值。
   isAuthenticated: boolean;  // 是否已認證
   isMockUser: boolean;  // 是否為模擬用戶
   isLoading: boolean;  // 是否正在載入
-  login: (email: string, password: string) => Promise<boolean>; // 登入方法
+  login: (email: string, password: string) => Promise<boolean>; // 登入方法，(email: string, password: string) 表示接受兩個字串參數，Promise<boolean> 表示返回一個布爾值的 Promise。
 }
 
 // 建立 Context 實例，初始值為 undefined
@@ -65,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 設置 token 並存儲於持久化存儲
   const setToken = async (newToken: string) => {
+    //async 函數的主要功用是允許在函數內部使用 await 關鍵字，await 用於暫停函數執行，直到指定的 Promise 解析（resolved）或拒絕（rejected）。
     try {
       // 存儲到 AsyncStorage
       if (newToken) {
@@ -268,8 +269,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 // useAuth hook，方便在組件中取得 token、user 與相關方法
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
+  const context = useContext(AuthContext);    //useContext 是 React 提供的一個 Hook，用於在函數組件中訪問上下文對象。
+  if (!context) {    //如果 context 為 null，則拋出錯誤，表示 useAuth 必須在 AuthProvider 內使用。
     throw new Error('useAuth must be used within an AuthProvider');  // 必須在 AuthProvider 內使用
   }
   return context;

@@ -1,114 +1,54 @@
-backend/
-│
-├── manage.py                # Django 專案管理腳本
-├── requirements.txt         # 專案依賴套件清單
-├── Dockerfile               # Docker 容器配置文件
-├── docker-compose.yml       # Docker Compose 配置文件（用於 Postgres）
-│
-├── config/                  # Django 專案配置目錄
-│   ├── __init__.py
-│   ├── settings.py          # 專案設置（資料庫、認證、API 等）
-│   ├── urls.py              # 專案 URL 路由
-│   └── wsgi.py              # WSGI 配置文件
-│
-├── apps/                    # 應用程式目錄
-│   ├── users/               # 用戶管理應用
-│   │   ├── __init__.py
-│   │   ├── admin.py         # 管理員介面配置
-│   │   ├── apps.py          # 應用配置
-│   │   ├── models.py        # 用戶模型（自定義用戶、個人檔案、技能標籤）
-│   │   ├── serializers.py   # 用戶相關序列化器
-│   │   ├── views.py         # 用戶相關視圖（登入、註冊、個人檔案）
-│   │   ├── urls.py          # 用戶相關 URL 路由
-│   │   └── tests.py         # 用戶相關測試
-│   │
-│   ├── posts/               # 貼文管理應用
-│   │   ├── __init__.py
-│   │   ├── admin.py
-│   │   ├── apps.py
-│   │   ├── models.py        # 貼文模型（文字、照片、影片、程式碼）
-│   │   ├── serializers.py   # 貼文相關序列化器
-│   │   ├── views.py         # 貼文相關視圖（發文、編輯、互動）
-│   │   ├── urls.py          # 貼文相關 URL 路由
-│   │   └── tests.py         # 貼文相關測試
-│   │
-│   ├── notifications/       # 通知管理應用
-│   │   ├── __init__.py
-│   │   ├── admin.py
-│   │   ├── apps.py
-│   │   ├── models.py        # 通知模型（追蹤請求、點讚、留言）
-│   │   ├── serializers.py   # 通知相關序列化器
-│   │   ├── views.py         # 通知相關視圖
-│   │   ├── urls.py          # 通知相關 URL 路由
-│   │   └── tests.py         # 通知相關測試
-│   │
-│   ├── private_messages/            # 私訊管理應用
-│   │   ├── __init__.py
-│   │   ├── admin.py
-│   │   ├── apps.py
-│   │   ├── models.py        # 私訊模型
-│   │   ├── serializers.py   # 私訊相關序列化器
-│   │   ├── views.py         # 私訊相關視圖
-│   │   ├── urls.py          # 私訊相關 URL 路由
-│   │   └── tests.py         # 私訊相關測試
-│   │
-│   └── search/              # 搜尋功能應用
-│       ├── __init__.py
-│       ├── admin.py
-│       ├── apps.py
-│       ├── views.py         # 搜尋相關視圖
-│       ├── urls.py          # 搜尋相關 URL 路由
-│       └── tests.py         # 搜尋相關測試
-│
-├── media/                   # 用戶上傳的媒體檔案（照片、影片）
-│
-└── static/                  # 靜態檔案（CSS、JS、圖片）
-frontend/
-│
-├── App.tsx                  # 應用程式入口
-├── package.json             # 專案依賴套件清單
-├── metro.config.js          # Metro 打包配置
-├── babel.config.js          # Babel 配置
-│
-├── src/                     # 原始碼目錄
-│   ├── assets/              # 資源檔案（圖片、字體等）
-│   │
-│   ├── components/          # 可重用組件
-│   │   ├── Button.tsx       # 通用按鈕組件
-│   │   ├── Header.tsx       # 頁面標頭組件
-│   │   ├── PostCard.tsx     # 貼文卡片組件
-│   │   └── ...              # 其他組件
-│   │
-│   ├── screens/             # 頁面組件
-│   │   ├── LoginScreen.tsx  # 登入頁面
-│   │   ├── RegisterScreen.tsx # 註冊頁面
-│   │   ├── HomeScreen.tsx   # 首頁
-│   │   ├── ProfileScreen.tsx # 個人檔案頁面
-│   │   ├── SearchScreen.tsx # 搜尋頁面
-│   │   ├── NotificationsScreen.tsx # 消息頁面
-│   │   ├── MessagesScreen.tsx # 私訊頁面
-│   │   └── ...              # 其他頁面
-│   │
-│   ├── navigation/          # 導航配置
-│   │   ├── AppNavigator.tsx # 應用程式導航器
-│   │   └── ...              # 其他導航相關檔案
-│   │
-│   ├── api/                 # API 調用模組
-│   │   ├── auth.ts          # 認證相關 API
-│   │   ├── posts.ts         # 貼文相關 API
-│   │   ├── notifications.ts # 通知相關 API
-│   │   ├── messages.ts      # 私訊相關 API
-│   │   └── search.ts        # 搜尋相關 API
-│   │
-│   ├── utils/               # 工具函數
-│   │   ├── logger.ts        # 日誌記錄工具
-│   │   ├── helpers.ts       # 輔助函數
-│   │   └── ...              # 其他工具
-│   │
-│   └── styles/              # 樣式檔案
-│       ├── theme.ts         # 主題樣式
-│       └── ...              # 其他樣式
-│
-├── android/                 # Android 平台相關檔案
-│
-└── ios/                     # iOS 平台相關檔案（可選）
+專案根目錄 (engineerhub)
+├── .git/
+├── backend/                  # 後端服務 (Python - Django/Flask)
+│   ├── apps/                 # 後端應用模組
+│   │   ├── users/            # 用戶管理 (認證、個人資料等)
+│   │   ├── posts/            # 貼文/動態功能
+│   │   ├── portfolios/       # 作品集/專案展示
+│   │   ├── private_messages/ # 私訊功能
+│   │   ├── notifications/    # 通知系統
+│   │   └── search/           # 搜尋功能
+│   ├── config/               # 後端整體設定 (e.g., Django settings.py)
+│   ├── manage.py             # Django 管理腳本 (若為 Django)
+│   └── requirements.txt      # Python 依賴
+├── frontend/                 # 前端應用 (React Native)
+│   ├── android/
+│   ├── ios/
+│   ├── src/                  # 前端原始碼
+│   │   ├── api/              # API 服務介面 (與後端通訊)
+│   │   ├── assets/           # 靜態資源 (圖片, 字型)
+│   │   ├── components/       # 可重用 UI 組件
+│   │   ├── config.ts         # 前端配置文件
+│   │   ├── context/          # React Context (e.g., AuthContext.tsx)
+│   │   ├── navigation/       # 導航路由配置
+│   │   ├── screens/          # 各個頁面/視圖組件
+│   │   ├── styles/           # 全局或共享樣式
+│   │   ├── theme.ts          # 主題配置文件 (顏色, 字型大小等)
+│   │   ├── types/            # TypeScript 類型定義
+│   │   ├── utils/            # 工具函數
+│   │   └── App.tsx           # 應用程式進入點
+│   ├── node_modules/
+│   ├── package.json
+│   └── ... (其他 React Native 設定檔)
+├── node_modules/
+├── .gitignore
+├── docker-compose.yml        # Docker 容器編排
+│                           # 可能包含:
+│                           #   - frontend (服務靜態文件或開發伺服器)
+│                           #   - backend (Python 應用服務)
+│                           #   - database (e.g., PostgreSQL, MySQL)
+│                           #   - (其他可能的服務如 Redis, Celery等)
+├── package.json
+├── README.md
+└── requirements.txt
+核心組件與交互：
+frontend/src/App.tsx: 應用程式的根組件，設置全局提供者如 AuthProvider 和導航。
+frontend/src/context/AuthContext.tsx: 管理用戶的登入狀態、Token 和用戶資訊。它會與 AsyncStorage 交互以持久化這些數據，並提供 login, logout, setToken, setUser 等方法。
+frontend/src/navigation/: 處理應用程式內不同畫面 (screens) 之間的跳轉。
+frontend/src/screens/: 包含各個獨立頁面的 UI 和邏輯，例如登入頁、主頁、個人資料頁等。這些頁面會使用 components 中的組件，並透過 api 與後端交互。
+frontend/src/api/: 封裝了對後端 API 的請求，例如登入、獲取帖子、更新個人資料等。
+backend/apps/*: 後端的各個功能模組。
+users: 處理用戶註冊、登入、身份驗證、個人資料管理。
+posts, portfolios: 處理核心內容的創建、讀取、更新、刪除 (CRUD)。
+其他模組提供輔助功能。
+docker-compose.yml: 將前端、後端以及可能的資料庫服務整合在一起，方便啟動和管理整個應用環境。

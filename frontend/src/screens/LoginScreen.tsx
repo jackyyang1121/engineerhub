@@ -28,15 +28,34 @@ type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'
 interface LoginScreenProps {  //interface是用來描述物件、類別或函數的結構，用於定義「物件的形狀」。類似typehint
   navigation: LoginScreenNavigationProp;  //定義 LoginScreen 組件會接收的屬性（props），這裡特別指定它會拿到一個 navigation 物件，這個物件是 React Navigation 提供的，用於在頁面間導航。
 }
+/*
+type：
+用於定義 TypeScript 型別別名，可以表示任何型別（物件、基本型別、聯合型別、交叉型別、泛型等）。
+僅存在於編譯時，用於型別檢查，不會出現在最終的 JavaScript 程式碼中。
+適用於：定義複雜型別、泛型型別、聯合型別等，例如導航型別（如 LoginScreenNavigationProp）。
 
+interface：
+用於定義 TypeScript 物件的結構，專注於描述物件的屬性和方法。
+僅存在於編譯時，用於型別檢查，不會出現在最終的 JavaScript 程式碼中。
+適用於：定義 props、狀態物件或其他明確的物件結構（如 LoginScreenProps）。
+
+const：
+用於定義 JavaScript/TypeScript 的運行時常量，儲存實際的值（例如函數、物件、數值等）。
+會出現在編譯後的 JavaScript 程式碼中，供程式運行時使用。
+適用於：定義組件、資料結構或其他運行時需要的變數（如 LoginScreen 組件）。
+*/
+//navigation.ts這個檔案定義了RootStackParamList，而RootStackParamList定義了所有可能的堆疊導航路徑包含login，作為 泛型參數 提供給 StackNavigationProp，用於生成導航屬性的型別，而這會賦值到RegisterScreenNavigationProp，而RegisterScreenNavigationProp是navigation的型別，會傳到RegisterScreenProps，最後再用React.FC去驗證所有型別是不是對的
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {    //這是定義 LoginScreen 這個 React 組件，說它是一個函數組件，並且會接收 navigation 屬性。
   //const是JavaScript（以及TypeScript）中的一種變數宣告方式，用來定義一個不可重新賦值的變數。用const：定義組件、Props、State、Hooks、常數，因為它們通常不需重新賦值。
+  //  如果組件不接收任何屬性(props)，可以直接省略：React.FC ， React.FC是用來確保型別安全，如果組件不接收任何 props，可以直接省略。
   const { setToken } = useAuth();  //useAuth 是一個自訂的 Hook，用於管理用戶認證狀態。Hook名稱以use開頭（例如useState、useEffect），這是React的慣例，方便辨識並啟用Hook的規則檢查（Linting）。
   //setToken 可以把登入成功後的 token 存起來，讓應用程式知道用戶已經登入。
-  const [identifier, setIdentifier] = useState('');   //用 useState 創建一個狀態變數 identifier，用來儲存用戶輸入的識別符（可能是用戶名或電子郵件）。
+  const [identifier, setIdentifier] = useState('');   //用 useState 創建一個狀態變數 identifier，用來儲存用戶輸入的識別符（可能是用戶名或電子郵件），setIdentifier 是個函數，用來更新 identifier 的值。
+  /*所以useState是React裡面的函數，先用const呼叫useState函數並用""空值呼叫，會返回identifier：當前狀態(因為用空值呼叫所以初始值是空值)、setIdentifier：一個函數更新狀態，在之後的程式碼再用setIdentifier()去改變identifier的值
+  可以自由命名狀態變數和更新函數（例如 identifier 和 setIdentifier）。*/
   const [password, setPassword] = useState('');   //跟 identifier 類似，用來儲存用戶輸入的密碼。
   const [error, setError] = useState('');  //用來儲存錯誤訊息，例如用戶名或密碼錯誤。
-  const [isLoading, setIsLoading] = useState(false);  //用來追蹤登入過程是否正在進行，例如發送請求時顯示載入中。
+  const [isLoading, setIsLoading] = useState(false);  //用來追蹤登入過程是否正在進行，例如發送請求時顯示載入中，初始值是false。
   
   // 動畫參數
   const fadeAnim = useRef(new Animated.Value(0)).current;  //創建一個動畫值 fadeAnim，用來控制頁面的透明度（淡入淡出效果），初始值是 0（完全透明）。
@@ -57,6 +76,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {    //這�
       })
     ]).start();
   }, []);
+  //當頁面載入時，內容會在 300 毫秒內從透明且略微向下偏移的狀態，變為完全可見且位於正常位置。
   /*空陣列 []：無依賴，副作用只在掛載時運行一次。
     有值 [a, b]：當a或b改變時，副作用重新運行。
     無陣列（省略）：副作用在每次渲染後都運行。*/
@@ -140,7 +160,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {    //這�
               value={identifier}  //value 是 React Native 提供的一個屬性，用於控制組件的值，identifier 是 React Native 提供的一個狀態變數，用於儲存用戶輸入的識別符（可能是用戶名或電子郵件）。
               onChangeText={(text) => {    //onChangeText 是 React Native 提供的一個事件，用於控制組件的值，text 是 React Native 提供的一個變數，用於儲存用戶輸入的文字。
                 setIdentifier(text);   //setIdentifier 是自訂的 Hook，用於管理用戶輸入的識別符（可能是用戶名或電子郵件）。
-                setError('');   //setError 是自訂的 Hook，用於管理錯誤訊息。
+                setError('');   //setError 是自訂的 Hook，清除錯誤訊息。
               }}
               placeholder="請輸入您的用戶名或電子郵件"
               placeholderTextColor={COLORS.placeholder}  //placeholderTextColor 是 React Native 提供的一個屬性，用於控制組件的顏色，不是自定義變數，COLORS.placeholder 是 React Native 提供的一個顏色，用於控制組件的顏色。
@@ -222,18 +242,18 @@ const styles = StyleSheet.create({
     letterSpacing: FONTS.letterSpacing.tight,  //letterSpacing: FONTS.letterSpacing.tight 是 React Native 提供的一個字體間距，用於控制元素的間距。
   },
   subtitle: {
-    fontFamily: FONTS.regular,  //fontFamily: FONTS.regular 是 React Native 提供的一個字體，用於控制元素的字體。
-    fontSize: FONTS.size.md,  //fontSize: FONTS.size.md 是 React Native 提供的一個字體大小，用於控制元素的字體大小。
-    color: COLORS.subText,  //color: COLORS.subText 是 React Native 提供的一個顏色，用於控制元素的顏色。
+    fontFamily: FONTS.regular,  //fontFamily:  是 React Native 提供的一個字體，用於控制元素的字體，FONTS.regular是我在theme.ts定義的。
+    fontSize: FONTS.size.md,  //fontSize: 是 React Native 提供的一個字體大小，用於控制元素的字體大小，FONTS.size.md 是我在theme.ts定義的。
+    color: COLORS.subText,  //color:  是 React Native 提供的一個顏色，用於控制元素的顏色，COLORS.subText是我在theme.ts定義的。
   },
   inputContainer: {
     marginBottom: SPACING.lg,  //marginBottom: SPACING.lg 是 React Native 提供的一個間距，用於控制元素下方的間距。
   },
   label: {
-    fontFamily: FONTS.medium,  //fontFamily: FONTS.medium 是 React Native 提供的一個字體，用於控制元素的字體。
-    fontSize: FONTS.size.sm,  //fontSize: FONTS.size.sm 是 React Native 提供的一個字體大小，用於控制元素的字體大小。
-    color: COLORS.text,  //color: COLORS.text 是 React Native 提供的一個顏色，用於控制元素的顏色。
-    marginBottom: SPACING.xs,  //marginBottom: SPACING.xs 是 React Native 提供的一個間距，用於控制元素下方的間距。
+    fontFamily: FONTS.medium,  //fontFamily: 是 React Native 提供的一個字體，用於控制元素的字體，FONTS.medium 是我在theme.ts定義的。
+    fontSize: FONTS.size.sm,  //fontSize:是 React Native 提供的一個字體大小，用於控制元素的字體大小，FONTS.size.sm 是我在theme.ts定義的  。
+    color: COLORS.text,  //color:是 React Native 提供的一個顏色，用於控制元素的顏色，COLORS.text是我在theme.ts定義的。
+    marginBottom: SPACING.xs,  //marginBottom:  是 React Native 提供的一個間距，用於控制元素下方的間距，SPACING.xs是我在theme.ts定義的。
   },
   input: {
     backgroundColor: COLORS.card,  //backgroundColor: COLORS.card 是 React Native 提供的一個顏色，用於控制元素的背景顏色。
@@ -275,7 +295,7 @@ const styles = StyleSheet.create({
 // shadowOpacity：陰影透明度（例如 0.3）。
 // shadowRadius：陰影模糊半徑（例如 3.84）。
 // elevation：Android 的陰影高度（例如 4）。
-// md 通常表示「中等」（medium）陰影，可能是你定義的一組陰影樣式（例如 SHADOW = { sm: {...}, md: {...}, lg: {...} }）。
+// md 表示「中等」（medium）陰影，我在theme.ts定義的一組陰影樣式（例如 SHADOW = { sm: {...}, md: {...}, lg: {...} }）。
   },
   buttonText: {     //
     color: COLORS.primary,

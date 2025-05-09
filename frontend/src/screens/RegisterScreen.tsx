@@ -25,14 +25,14 @@ type RegisterScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Reg
 interface RegisterScreenProps {
   navigation: RegisterScreenNavigationProp;
 }
-
+//navigation.ts這個檔案定義了RootStackParamList，而RootStackParamList定義了所有可能的堆疊導航路徑包含Register，作為 泛型參數 提供給 StackNavigationProp，用於生成導航屬性的型別，而這會賦值到RegisterScreenNavigationProp，而RegisterScreenNavigationProp是navigation的型別，會傳到RegisterScreenProps，最後再用React.FC去驗證所有型別是不是對的
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   // 狀態：用戶名、電子郵件、密碼、確認密碼、錯誤訊息、載入中
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState<Record<string, string>>({});
+  const [error, setError] = useState<Record<string, string>>({});    //Record<string, string> 是 TypeScript 的型別，表示一個包含字串鍵和字串值的物件。
   const [isLoading, setIsLoading] = useState(false);
   
   // 動畫參數
@@ -54,10 +54,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       })
     ]).start();
   }, []);
+  //當頁面載入時，內容會在 300 毫秒內從透明且略微向下偏移的狀態，變為完全可見且位於正常位置。
   
   // 驗證表單
   const validateForm = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = {};   //Record<string, string> 是 TypeScript 的型別，表示一個包含字串鍵(key)和字串值(value)的物件。
     
     // 驗證用戶名
     if (!username.trim()) {
@@ -87,7 +88,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
     
     setError(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return Object.keys(newErrors).length === 0;  //Object.keys(newErrors) 返回 newErrors 物件的鍵陣列。
   };
 
   // 處理註冊請求
@@ -96,8 +97,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     
     setIsLoading(true);
     try {
-      const response = await axios.post('http://10.0.2.2:8000/api/users/register/', {
-        username,
+      const response = await axios.post('http://10.0.2.2:8000/api/users/register/', {  ///api：API 端點的常見前綴，表示這是一個 API 路由（而不是網頁或靜態資源）。
         email,
         password,
       });
